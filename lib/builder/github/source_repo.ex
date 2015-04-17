@@ -6,26 +6,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   alias OpenAperture.Builder.DeploymentRepo
 
   @doc """
-  This module contains the logic for interacting with a CloudOS source code repo.
-
-  ## Options
-   
-  The `options` option defines the information needed to download and interact with a CloudOS deployment repo.
-  The following values are accepted:
-    * repo - (required) String containing the repo org and name:  Perceptive-Cloud/myapp-deploy
-    * repo_branch - (optional) - String containing the commit/tag/branch to be used.  Defaults to 'master'
-
-  ## Return values
-
-  If the server is successfully created and initialized, the function returns
-  `{:ok, pid}`, where pid is the pid of the server. If there already exists a
-  process with the specified server name, the function returns
-  `{:error, {:already_started, pid}}` with the pid of that process.
-
-  If the `init/1` callback fails with `reason`, the function returns
-  `{:error, reason}`. Otherwise, if it returns `{:stop, reason}`
-  or `:ignore`, the process is terminated and the function returns
-  `{:error, reason}` or `:ignore`, respectively.
+  This module contains the logic for interacting with an OpenAperture source code repo.
   """
   @spec create(Map) :: {:ok, pid} | {:error, String.t()}	
   def create(options) do
@@ -46,17 +27,6 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   @doc """
   Method to generate a new source repo
-
-  ## Options
-  
-  The `options` option defines the information needed to download and interact with a CloudOS deployment repo.
-  The following values are accepted:
-    * repo - (required) String containing the repo org and name:  Perceptive-Cloud/myapp-deploy
-    * repo_branch - (optional) - String containing the commit/tag/branch to be used.  Defaults to 'master'
-
-  ## Return Values
-
-  pid
   """
   @spec create!(Map) :: pid
   def create!(options) do
@@ -189,7 +159,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   end
 
   @doc """
-  Method to retrieve CloudOS repo info from the output directory
+  Method to retrieve an OpenAperture repo info from the output directory
 
   ## Options
 
@@ -199,14 +169,14 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   Map
   """
-  @spec get_cloudos_info(pid) :: {:ok, pid} | {:error, String.t()}
-  def get_cloudos_info(repo) do
+  @spec get_openaperture_info(pid) :: {:ok, pid} | {:error, String.t()}
+  def get_openaperture_info(repo) do
     repo_options = Agent.get(repo, fn options -> options end)
-    resolve_cloudos_info(repo_options[:output_dir])
+    resolve_openaperture_info(repo_options[:output_dir])
   end
 
   @doc """
-  Method to determine the CloudOS deployment repo from the source repo.
+  Method to determine the OpenAperture deployment repo from the source repo.
      
   ## Options
    
@@ -222,11 +192,11 @@ defmodule OpenAperture.Builder.SourceRepo do
     if (repo_options[:deployment_repo] != nil) do
       repo_options[:deployment_repo]
     else
-      cloudos_info = resolve_cloudos_info(repo_options[:output_dir])
+      openaperture_info = resolve_openaperture_info(repo_options[:output_dir])
 
-      if (cloudos_info != nil) do
-        docker_repo = cloudos_info["deployments"]["docker_repo"]
-        docker_repo_branch = cloudos_info["deployments"]["docker_repo_branch"]          
+      if (openaperture_info != nil) do
+        docker_repo = openaperture_info["deployments"]["docker_repo"]
+        docker_repo_branch = openaperture_info["deployments"]["docker_repo_branch"]          
         if (docker_repo != nil) do
           #docker_repo_branch will default to master if not present
           deployment_repo = DeploymentRepo.create(%{docker_repo: docker_repo, docker_repo_branch: docker_repo_branch})
@@ -234,16 +204,16 @@ defmodule OpenAperture.Builder.SourceRepo do
           Agent.update(repo, fn _ -> repo_options end)
           deployment_repo          
         else
-          {:error, "cloudos.json is invalid! Make sure both the repo and default branch are specified"}
+          {:error, "openaperture.json is invalid! Make sure both the repo and default branch are specified"}
         end
       else
-        {:error, "cloudos.json is either missing or invalid!"}
+        {:error, "source_dir.json is either missing or invalid!"}
       end      
     end    
   end
 
   @doc false
-  # Method to retrieve the CloudOS repo info from source repository
+  # Method to retrieve the OpenAperture repo info from source repository
   #
   ## Options
   #
@@ -255,19 +225,19 @@ defmodule OpenAperture.Builder.SourceRepo do
   # 
   # Map
   #
-  @spec resolve_cloudos_info(String.t()) :: Map
-  defp resolve_cloudos_info(source_dir) do
-    output_path = "#{source_dir}/cloudos.json"
+  @spec resolve_openaperture_info(String.t()) :: Map
+  defp resolve_openaperture_info(source_dir) do
+    output_path = "#{source_dir}/openaperture.json"
 
     if File.exists?(output_path) do
-      Logger.info("Resolving CloudOS info from #{output_path}...")
-      cloudos_json = case File.read!(output_path) |> JSON.decode do
+      Logger.info("Resolving OpenAperture info from #{output_path}...")
+      openaperture_json = case File.read!(output_path) |> JSON.decode do
         {:ok, json} -> json
         {:error, reason} ->  
-          Logger.error("An error occurred parsing CloudOS JSON! #{inspect reason}")
+          Logger.error("An error occurred parsing OpenAperture JSON! #{inspect reason}")
           nil
       end
-      cloudos_json      
+      openaperture_json      
     else
       nil
     end

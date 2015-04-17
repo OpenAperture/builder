@@ -14,7 +14,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   def init(:ok) do
   	milestone_queue = %Queue{
       name: "workflow_orchestration", 
-      exchange: %AMQPExchange{name: Application.get_env(:cloudos_builder, :exchange_id), options: [:durable]},
+      exchange: %AMQPExchange{name: Application.get_env(:openaperture_builder, :exchange_id), options: [:durable]},
       error_queue: "workflow_orchestration_error",
       options: [durable: true, arguments: [{"x-dead-letter-exchange", :longstr, ""},{"x-dead-letter-routing-key", :longstr, "workflow_orchestration_error"}]],
       binding_options: [routing_key: "workflow_orchestration"]
@@ -25,7 +25,7 @@ defmodule OpenAperture.Builder.Dispatcher do
     			      end
 
     OpenAperture.ManagerApi.get_api()
-  		|> OpenAperture.Messaging.ConnectionOptionsResolver.get_for_broker(Application.get_env(:cloudos_builder, :broker_id))
+  		|> OpenAperture.Messaging.ConnectionOptionsResolver.get_for_broker(Application.get_env(:openaperture_builder, :broker_id))
   		|> subscribe(milestone_queue, callback)
   	{:ok, []}
   end

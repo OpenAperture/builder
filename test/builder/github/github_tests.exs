@@ -215,11 +215,11 @@ defmodule Agents.GitHubTests do
   # get_project_name tests
 
   test "get_project_name - success", context do
-    assert Github.get_project_name("https://github.com/Perceptive-Cloud/myapp") == "myapp"
+    assert Github.get_project_name("https://github.com/myorg/myapp") == "myapp"
   end
 
   test "get_project_name - suffix", context do
-    assert Github.get_project_name("https://github.com/Perceptive-Cloud/myapp.git") == "myapp.git"
+    assert Github.get_project_name("https://github.com/myorg/myapp.git") == "myapp.git"
   end  
 
   #===========================

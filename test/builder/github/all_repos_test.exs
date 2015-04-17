@@ -21,7 +21,7 @@ defmodule OpenAperture.Builder.AllRepos.Test do
   #   {:ok, repo: repo, deploy_repo: deploy_repo}
   # end
 
-  # test "get_deployment_repo(pid) returns proper JSON if cloudos.json is OK", %{repo: repo} do
+  # test "get_deployment_repo(pid) returns proper JSON if openaperture.json is OK", %{repo: repo} do
   #   :meck.new(File, [:unstick])
   #   :meck.expect(File, :exists?, fn _ -> true end)
   #   :meck.expect(File, :read!, fn _ -> JSON.encode!(%{
@@ -38,7 +38,7 @@ defmodule OpenAperture.Builder.AllRepos.Test do
   #   :meck.unload(File)
   # end
 
-  # test "get_deployment_repo(repo) returns an error when cloudos.json is invalid ", %{repo: repo} do
+  # test "get_deployment_repo(repo) returns an error when openaperture.json is invalid ", %{repo: repo} do
   #   :meck.new(File, [:unstick])
   #   :meck.expect(File, :exists?, fn _ -> true end)
   #   :meck.expect(File, :read!, fn _ -> "this isn't actually json" end)
@@ -46,7 +46,7 @@ defmodule OpenAperture.Builder.AllRepos.Test do
   #   # bad json
   #   {result, message} = SourceRepo.get_deployment_repo(repo)
   #   assert result  == :error
-  #   assert message == "cloudos.json is either missing or invalid!"
+  #   assert message == "openaperture.json is either missing or invalid!"
 
   # after
   #   :meck.unload(File)
@@ -65,7 +65,7 @@ defmodule OpenAperture.Builder.AllRepos.Test do
   #   # no repo
   #   {result, message} = SourceRepo.get_deployment_repo(repo)
   #   assert result  == :error
-  #   assert message == "cloudos.json is invalid! Make sure both the repo and default branch are specified"
+  #   assert message == "openaperture.json is invalid! Make sure both the repo and default branch are specified"
   # after
   #   :meck.unload(File)      
   # end  
@@ -77,7 +77,7 @@ defmodule OpenAperture.Builder.AllRepos.Test do
   #   # no file
   #   {result, message} = SourceRepo.get_deployment_repo(repo)
   #   assert result  == :error
-  #   assert message == "cloudos.json is either missing or invalid!"
+  #   assert message == "openaperture.json is either missing or invalid!"
   # after
   #   :meck.unload(File)
   # end

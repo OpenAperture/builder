@@ -62,7 +62,7 @@ defmodule OpenAperture.Builder.Github do
 
   The `github_options` option defines the Map of configuration options that should be 
   passed to Github.  The following values are required:
-    * :repo_url - the fully qualified github repo URL (i.e. Perceptive-Cloud/<repo>)
+    * :repo_url - the fully qualified github repo URL (i.e. myorg/<repo>)
     * :output_dir - the directory containing the git repo
     * :branch - github branch
 
@@ -90,7 +90,7 @@ defmodule OpenAperture.Builder.Github do
   
   The `github_options` option defines the Map of configuration options that should be 
   passed to Github.  The following values are required:
-    * :repo_url - the fully qualified github repo URL (i.e. Perceptive-Cloud/<repo>)
+    * :repo_url - the fully qualified github repo URL (i.e. myorg/<repo>)
     * :output_dir - the directory containing the git repo
     * :branch - github branch
 
@@ -100,9 +100,9 @@ defmodule OpenAperture.Builder.Github do
   """
   @spec create!(Map) :: pid
   def create!(github_options) do
-    case CloudosBuildServer.Agents.Github.create(github_options) do
+    case create(github_options) do
       {:ok, github} -> github
-      {:error, reason} -> raise "Failed to create CloudosBuildServer.Agents.Github:  #{reason}"
+      {:error, reason} -> raise "Failed to create OpenAperture.Builder.Github:  #{reason}"
     end
   end  
 

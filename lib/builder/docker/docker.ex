@@ -31,7 +31,7 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to cleanup any Docker cache files that were generated during CloudOS builds
+  Method to cleanup any Docker cache files that were generated during builds
   """
   #@spec cleanup_cache(Docker)
   def cleanup_cache(docker) do

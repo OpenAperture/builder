@@ -358,7 +358,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       output_path = "#{source_dir}/#{filename}"
 
       Logger.info("Resolving service file #{output_path}...")
-      unitOptions = CloudosBuildServer.Fleet.ServiceFileParser.parse(output_path)
+      unitOptions = OpenAperture.Fleet.ServiceFileParser.parse(output_path)
       unit = %{
         "name" => filename,
         "options" => unitOptions

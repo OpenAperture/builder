@@ -23,16 +23,16 @@ defmodule OpenAperture.Builder.Build do
 
   @spec build_impl(DeploymentRepo) :: {:ok, DeploymentRepo} | {:error, String.t}
   defp build_impl(deploy_repo) do
-    cloudos_workflow   = "workflow"
+    openaperture_workflow   = "workflow"
 		Logger.info ("Beginning docker image build of #{deploy_repo.docker_repo_name}:#{deploy_repo.source_repo_git_ref}...")
     
     case DeploymentRepo.create_docker_image(deploy_repo, ["#{deploy_repo.docker_repo_name}:#{deploy_repo.source_repo_git_ref}"]) do
       {:ok, deploy_repo} ->
-        Workflow.next_step(cloudos_workflow, %{})
+        Workflow.next_step(openaperture_workflow, %{})
         {:ok, deploy_repo}
       {:error, reason} -> 
         Logger.info("Failed to build docker image #{deploy_repo.docker_repo_name}:#{deploy_repo.source_repo_git_ref}:  #{inspect reason}")
-        Workflow.step_failed(cloudos_workflow, "Failed to create the docker image:  #{inspect reason}", reason)
+        Workflow.step_failed(openaperture_workflow, "Failed to create the docker image:  #{inspect reason}", reason)
         {:error, reason}
     end
 	end

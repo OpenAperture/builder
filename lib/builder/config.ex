@@ -25,9 +25,9 @@ defmodule OpenAperture.Builder.Config do
 
   @spec config_impl(Map) :: {:ok, DeploymentRepo} | {:error, String.t}
   defp config_impl(options) do
-    cloudos_workflow   = "workflow"
+    openaperture_workflow   = "workflow"
 
-    Workflow.publish_success_notification(cloudos_workflow, "Requesting configuration of repository #{options[:deployment_repo]}...")
+    Workflow.publish_success_notification(openaperture_workflow, "Requesting configuration of repository #{options[:deployment_repo]}...")
 
     deploy_repo = %DeploymentRepo{deployment_repo: options[:deployment_repo],
                                   deployment_repo_git_ref: options[:deployment_repo_git_ref] || "master",
@@ -43,7 +43,7 @@ defmodule OpenAperture.Builder.Config do
           commit_result = case DeploymentRepo.checkin_pending_changes(deploy_repo, "Deployment for commit #{deploy_repo.source_repo_git_ref}") do
             :ok -> :ok
             {:error, reason} ->
-              Workflow.step_failed(cloudos_workflow, "Failed to commit changes.  Please see the event log for more details...", reason)
+              Workflow.step_failed(openaperture_workflow, "Failed to commit changes.  Please see the event log for more details...", reason)
               :error
           end
         else
@@ -53,14 +53,14 @@ defmodule OpenAperture.Builder.Config do
 
         case commit_result do
           :ok ->
-              Workflow.next_step(cloudos_workflow, "next step")
+              Workflow.next_step(openaperture_workflow, "next step")
           {:error, reason}   ->
               DeploymentRepo.cleanup(deploy_repo)
               {:error, reason}
         end
       {:error, reason} ->
         DeploymentRepo.cleanup(deploy_repo)
-        Workflow.step_failed(cloudos_workflow, "Failed to download the deployment repository.  Please see the event log for more details...", reason)
+        Workflow.step_failed(openaperture_workflow, "Failed to download the deployment repository.  Please see the event log for more details...", reason)
     end
   end
 
