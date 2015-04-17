@@ -30,6 +30,7 @@ defmodule OpenAperture.Builder.DockerTests do
       assert String.contains?(Enum.at(args, 1), "docker build --force-rm=true --no-cache=true --rm=true -t myorg/myapp .")
       {"Successfully built 87793b8f30d9", 0}
     end)
+    :meck.expect(System, :user_home, fn -> "/" end)
 
     docker = %Docker{docker_repo_url: "myorg/myapp", authenticated: true, output_dir: "/tmp/notused"}
     
