@@ -1,0 +1,82 @@
+[{
+    "Args": [
+        "-c",
+        "/build/update.sh 5b1286278662b1b67a9577c5aede1bd03a08bb76 \u0026\u0026 rm -rf /build"
+    ],
+    "Config": {
+        "AttachStderr": false,
+        "AttachStdin": false,
+        "AttachStdout": false,
+        "Cmd": [
+            "/bin/sh",
+            "-c",
+            "/build/update.sh 5b1286278662b1b67a9577c5aede1bd03a08bb76 \u0026\u0026 rm -rf /build"
+        ],
+        "CpuShares": 0,
+        "Cpuset": "",
+        "Domainname": "",
+        "Entrypoint": [],
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "HOME=/root"
+        ],
+        "ExposedPorts": null,
+        "Hostname": "b9466491bd34",
+        "Image": "947e2652c7cd996e5f0b4fc4fd729cc1d9f2fb93e4241e23e7b509173bb3a872",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "NetworkDisabled": false,
+        "OnBuild": [],
+        "OpenStdin": false,
+        "PortSpecs": null,
+        "StdinOnce": false,
+        "Tty": false,
+        "User": "",
+        "Volumes": null,
+        "WorkingDir": ""
+    },
+    "Created": "2014-12-12T21:30:07.526303411Z",
+    "Driver": "devicemapper",
+    "ExecDriver": "native-0.2",
+    "HostConfig": {
+        "Binds": null,
+        "ContainerIDFile": "",
+        "Dns": null,
+        "DnsSearch": null,
+        "Links": null,
+        "LxcConf": null,
+        "NetworkMode": "",
+        "PortBindings": null,
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "VolumesFrom": null
+    },
+    "HostnamePath": "/var/lib/docker/containers/df605fc2be56a369efb170fb42ca938cc8f31c6b2dde8ee5a0c43eda63eae5fe/hostname",
+    "HostsPath": "/var/lib/docker/containers/df605fc2be56a369efb170fb42ca938cc8f31c6b2dde8ee5a0c43eda63eae5fe/hosts",
+    "Id": "df605fc2be56a369efb170fb42ca938cc8f31c6b2dde8ee5a0c43eda63eae5fe",
+    "Image": "947e2652c7cd996e5f0b4fc4fd729cc1d9f2fb93e4241e23e7b509173bb3a872",
+    "MountLabel": "",
+    "Name": "/loving_carson",
+    "NetworkSettings": {
+        "Bridge": "",
+        "Gateway": "",
+        "IPAddress": "",
+        "IPPrefixLen": 0,
+        "PortMapping": null,
+        "Ports": null
+    },
+    "Path": "/bin/sh",
+    "ProcessLabel": "",
+    "ResolvConfPath": "/etc/resolv.conf",
+    "State": {
+        "ExitCode": 2,
+        "FinishedAt": "2014-12-12T21:30:07.767417587Z",
+        "Paused": false,
+        "Pid": 0,
+        "Running": false,
+        "StartedAt": "2014-12-12T21:30:07.667934126Z"
+    },
+    "Volumes": {},
+    "VolumesRW": {}
+}
+]
