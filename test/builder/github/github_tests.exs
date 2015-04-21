@@ -1,274 +1,142 @@
-defmodule Agents.GitHubTests do
+defmodule OpenAperture.Builder.GithubTest do
   use ExUnit.Case
 
-  alias OpenAperture.Builder.Github
+  alias OpenAperture.Builder.GitHub.Repo
+  import OpenAperture.Builder.GitHub
 
-  test "resolves github repo url" do
-    repo_url = Github.resolve_github_repo_url("cool_org/cool_repo")
-    assert Regex.match?(~r/https:\/\/(\S)*\/cool_org\/cool_repo/, repo_url)
-  end
+  setup do
+    :meck.new System, [:unstick, :passthrough]
 
-  test "creates a genserver" do
-    options = %{
-      output_dir: "test_output_dir",
-      repo_url: Github.resolve_github_repo_url("cool_org/cool_repo"),
-      branch: "test"
+    repo = %Repo{
+      local_repo_path: "/tmp/some_random_path",
+      remote_url: "https://github.com/test_org/test_project",
+      branch: "master"
     }
 
-    {atom, _} = Github.create(options)
-    assert atom == :ok
+    on_exit fn -> :meck.unload end
+
+    {:ok, repo: repo}
   end
 
-  defmodule WithAgentCreated do
-    @options %{
-      output_dir: "test_output_dir",
-      repo_url: Github.resolve_github_repo_url("cool_org/cool_repo"),
-      branch: "test"
-    }
+  test "clone -- success", context do
+    repo = context[:repo]
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git clone #{repo.remote_url} #{repo.local_repo_path}" in args
+      {"cool test message", 0}
+    end)
 
-    use ExUnit.Case
-
-    setup do
-      # this will set the context for each test to the Github pid
-      {_, pid} = Github.create(@options)
-      {:ok, pid: pid}
-    end
-
-    test "get_options", context do
-      assert Github.get_options(context[:pid]) == @options
-    end
-
-    test "get_options for nil", context do
-      assert Github.get_options(nil) == nil
-    end
-
-    test "clone -- success", context do
-      :meck.new(System, [:unstick])
-      try do
-        :meck.expect(System, :cmd, fn command, args, opts ->
-          assert command == "/bin/bash"
-          assert Regex.match?(~r/git clone #{@options[:repo_url]} #{@options[:output_dir]}/, Enum.at(args, 1))
-          {"cool test message", 0}
-        end)
-        assert Github.clone(context[:pid]) == :ok
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "clone -- invalid agent", context do
-      assert Github.clone(nil) == {:error, "invalid github agent!"}
-    end
-
-    test "clone --error", context do
-      :meck.new(System, [:unstick])
-      try do
-
-        :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
-        result = Github.clone(context[:pid])
-        assert elem(result, 0) == :error
-        assert elem(result, 1) != nil
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "checkout -- success", context do
-      :meck.new(System, [:unstick])
-      try do
-        :meck.expect(System, :cmd, fn command, args, opts ->
-          assert command == "/bin/bash"
-          assert Regex.match?(~r/git checkout #{@options[:branch]}/, Enum.at(args, 1))
-          {"cool success message", 0}
-        end)
-
-        assert Github.checkout(context[:pid]) == :ok
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "checkout -- invalid agent", context do
-      assert Github.checkout(nil) == {:error, "invalid github agent!"}
-    end    
-
-    test "checkout -- error", context do
-      :meck.new(System, [:unstick])
-      try do
-        :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
-
-        result = Github.checkout(context[:pid])
-        assert elem(result, 0) == :error
-        assert elem(result, 1) != nil
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "add -- success", context do
-      filepath = "cool_folder/cool_file"
-      :meck.new(System, [:unstick])
-      try do
-        :meck.expect(System, :cmd, fn command, args, opts ->
-          assert command == "/bin/bash"
-          assert Regex.match?(~r/git add #{filepath}/, Enum.at(args, 1))
-          {"cool success message", 0}
-        end)
-
-        assert Github.add(context[:pid], filepath) == :ok
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "add -- invalid agent", context do
-      assert Github.add(nil, "cool file") == {:error, "invalid github agent!"}
-    end    
-
-    test "add -- error", context do
-      filepath = "cool_folder/cool_file"
-      :meck.new(System, [:unstick])
-
-      try do
-        :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
-
-        result = Github.add(context[:pid], filepath)
-        assert elem(result, 0) == :error
-        assert elem(result, 1) != nil
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "commit -- success", context do
-      message = "cool commit message"
-      :meck.new(System, [:unstick])
-
-      try do
-        :meck.expect(System, :cmd, fn command, args, opts ->
-          assert command == "/bin/bash"
-          assert Regex.match?(~r/git commit -m "#{message}"/, Enum.at(args, 1))
-          {"cool success message", 0}
-        end)
-
-        assert Github.commit(context[:pid], message) == :ok
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "commit -- invalid agent", context do
-      assert Github.commit(nil, "cool message") == {:error, "invalid github agent!"}
-    end    
-
-    test "commit -- failure", context do
-      message = "cool commit message"
-      :meck.new(System, [:unstick])
-
-      try do
-        :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
-
-        result = Github.commit(context[:pid], message)
-        assert elem(result, 0) == :error
-        assert elem(result, 1) != nil
-      after
-        :meck.unload(System)
-      end
-    end
-
-    test "push -- success", context do
-      :meck.new(System, [:unstick])
-
-      try do
-        :meck.expect(System, :cmd, fn command, args, opts ->
-          assert command == "/bin/bash"
-          assert Regex.match?(~r/git push/, Enum.at(args, 1))
-          {"cool success message", 0}
-        end)
-
-        assert Github.push(context[:pid]) == :ok
-      after
-        :meck.unload(System)      
-      end
-    end
-
-    test "push -- invalid agent", context do
-      assert Github.push(nil) == {:error, "invalid github agent!"}
-    end    
-
-    test "push -- error", context do
-      :meck.new(System, [:unstick])
-
-      try do
-        :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
-
-        result = Github.push(context[:pid])
-        assert elem(result, 0) == :error
-        assert elem(result, 1) != nil
-      after
-        :meck.unload(System)
-      end
-    end
+    assert clone(repo) == :ok
   end
 
-  #===========================
-  # get_project_name tests
+  test "clone -- error", context do
+    repo = context[:repo]
 
-  test "get_project_name - success", context do
-    assert Github.get_project_name("https://github.com/myorg/myapp") == "myapp"
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
+    {result, _msg} = clone(repo)
+    assert :error == result
   end
 
-  test "get_project_name - suffix", context do
-    assert Github.get_project_name("https://github.com/myorg/myapp.git") == "myapp.git"
-  end  
+  test "checkout -- success", context do
+    repo = context[:repo]
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git checkout #{repo.branch}" in args
+      {"cool success message", 0}
+    end)
 
-  #===========================
-  # add_all tests
+    assert checkout(repo) == :ok
+  end
+
+  test "checkout -- failure", context do
+    repo = context[:repo]
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
+
+    {result, _msg} = checkout(repo)
+    assert :error == result
+  end
+
+  test "add -- success", context do
+    repo = context[:repo]
+    path = "/some/test/path"
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git add " <> path in args
+      {"cool success message", 0}
+    end)
+
+    assert add(repo, path) == :ok
+  end
+
+  test "add -- failure", context do
+    repo = context[:repo]
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
+
+    {result, _msg} = add(repo, "blar")
+    assert :error == result
+  end
 
   test "add_all -- success", context do
-    filepath = "cool_folder"
-    :meck.new(System, [:unstick])
-    try do
-      :meck.expect(System, :cmd, fn command, args, opts ->
-        assert command == "/bin/bash"
-        assert Regex.match?(~r/git add -A #{filepath}/, Enum.at(args, 1))
-        {"cool success message", 0}
-      end)
+    repo = context[:repo]
+    path = "cool_folder"
 
-      options = %{
-        output_dir: "test_output_dir",
-        repo_url: Github.resolve_github_repo_url("cool_org/cool_repo"),
-        branch: "test"
-      }
-      {_, pid} = Github.create(options)
-      assert Github.add_all(pid, filepath) == :ok
-    after
-      :meck.unload(System)
-    end
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git add -A #{path}" in args
+      {"cool success message", 0}
+    end)
+
+    assert add_all(repo, path) == :ok
   end
 
-  test "add_all -- invalid agent", context do
-    assert Github.add_all(nil, "cool_folder") == {:error, "invalid github agent!"}
-  end    
+  test "add_all -- failure", context do
+    repo = context[:repo]
+    path = "cool_folder"
 
-  test "add_all -- error", context do
-    filepath = "cool_folder"
-    :meck.new(System, [:unstick])
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
 
-    try do
-      :meck.expect(System, :cmd, fn _, _, _ -> {"oh no!", 1} end)
+    {result, _msg} = add_all(repo, path)
+    assert result == :error
+  end
 
-      options = %{
-        output_dir: "test_output_dir",
-        repo_url: Github.resolve_github_repo_url("cool_org/cool_repo"),
-        branch: "test"
-      }
-      {_, pid} = Github.create(options)
-      result = Github.add_all(pid, filepath)
-      assert elem(result, 0) == :error
-      assert elem(result, 1) != nil
-    after
-      :meck.unload(System)
-    end
-  end  
+  test "commit -- sucess", context do
+    repo = context[:repo]
+    message = "cool commit message"
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git commit -m \"#{message}\"" in args
+      {"cool success message", 0}
+    end)
+
+    assert commit(repo, message) == :ok
+  end
+
+  test "commit -- failure", context do
+    repo = context[:repo]
+
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
+
+    {result, _msg} = commit(repo, "cool commit message")
+    assert :error == result
+  end
+
+  test "push -- success", context do
+    repo = context[:repo]
+
+    :meck.expect(System, :cmd, fn command, args, _opts ->
+      assert command == "/bin/bash"
+      assert "git push" in args
+      {"cool success message", 0}
+    end)
+
+    assert push(repo) == :ok
+  end
+
+  test "push -- failure", context do
+    repo = context[:repo]
+    :meck.expect(System, :cmd, 3, {"oh no!", 1})
+
+    {result, _msg} = push(repo)
+    assert :error == result
+  end
 end

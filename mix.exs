@@ -12,7 +12,7 @@ defmodule OpenAperture.Builder.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger, :openaperture_messaging, :openaperture_manager_api, :openaperture_fleet],
+    [applications: [:logger, :openaperture_messaging, :openaperture_manager_api, :openaperture_fleet, :openaperture_workflow_orchestrator_api],
      mod: {OpenAperture.Builder, []}]
   end
 
@@ -30,15 +30,10 @@ defmodule OpenAperture.Builder.Mixfile do
       {:ex_doc, github: "elixir-lang/ex_doc", only: [:test]},
       {:markdown, github: "devinus/markdown", only: [:test]},
             
-      {:openaperture_messaging,
-       git: "https://#{System.get_env("GITHUB_OAUTH_TOKEN")}:x-oauth-basic@github.com/OpenAperture/messaging.git",
-       ref: "3211204ba8d949b76bc3373ee91260944cc0ff6b"},
-      {:openaperture_manager_api,
-       git: "https://#{System.get_env("GITHUB_OAUTH_TOKEN")}:x-oauth-basic@github.com/OpenAperture/manager_api.git",
-       ref: "f67a4570ec4b46cb2b2bb746924b322eec1e3178"},
-      {:openaperture_fleet,
-       git: "https://#{System.get_env("GITHUB_OAUTH_TOKEN")}:x-oauth-basic@github.com/OpenAperture/fleet.git",
-       ref: "0c648a0645106e51b858e3dbddefa570cdd2785a"},
+      {:openaperture_messaging, git: "https://github.com/OpenAperture/messaging.git",ref: "e3247e4fbcc097a3156e3b95ad2115408693ca12", override: true},
+      {:openaperture_manager_api, git: "https://github.com/OpenAperture/manager_api.git",ref: "32986942e702dc4b32ab9118362cda992949fa6c", override: true},
+      {:openaperture_fleet, git: "https://github.com/OpenAperture/fleet.git", ref: "7aa864eeb3876b476c89d58c56364cbb0fa2fb08", override: true},
+      {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "16496bac4c955483bd04af9f67c34c2ad415e5f8", override: true},
       {:timex, "~> 0.12.9"},
       
       {:meck, "0.8.2", only: :test},

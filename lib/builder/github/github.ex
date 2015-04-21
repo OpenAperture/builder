@@ -1,321 +1,127 @@
-require Logger
-
-defmodule OpenAperture.Builder.Github do
-  alias OpenAperture.Builder.Util
+defmodule OpenAperture.Builder.GitHub do
   @moduledoc """
-  This module contains the logic for interacting with Github.
+  This module contains functions used for interacting with a git repository,
+  specifically in the context of one cloned from GitHub.
   """
 
-  @doc """
-  Method to return the project name of a repository
-
-  ## Options
-
-  The `src_repo` option defines the fully qualified repository name.
-
-  ## Return values
-
-  String
-  """  
-  @spec get_project_name(String.t()) :: String.t()
-  def get_project_name(src_repo) do
-    URI.parse(src_repo).path
-      |> get_after_last_forward_slash
-  end
-
-  @doc false
-  #Method to return the project name of a repository
-  #
-  ## Options
-  #
-  # The `src_repo` option defines the fully qualified repository name.
-  #
-  ## Return values
-  #
-  #String
-  # 
-  @spec get_after_last_forward_slash(String.t()) :: String.t()
-  defp get_after_last_forward_slash(str) do
-    String.split(str, ~r{/}) |> List.last
-  end
+  require Logger
+  alias OpenAperture.Builder.GitHub.Repo
 
   @doc """
-  Method to create a fully-qualified github repo URL from a relative repository name.
-
-  ## Options
-
-  The `github_repo` option defines the relative repository name.
-
-  ## Return values
-
-  String
-  """  
-  @spec resolve_github_repo_url(String.t()) :: String.t()
-  def resolve_github_repo_url(github_repo) do
-    "https://#{Application.get_env(:openaperture_builder, :github_user_credentials)}:x-oauth-basic@github.com/#{github_repo}"
-  end
-
-  @doc """
-  Creates an Agent representing Github.
-
-  ## Options
-
-  The `github_options` option defines the Map of configuration options that should be 
-  passed to Github.  The following values are required:
-    * :repo_url - the fully qualified github repo URL (i.e. myorg/<repo>)
-    * :output_dir - the directory containing the git repo
-    * :branch - github branch
-
-  ## Return values
-
-  If the server is successfully created and initialized, the function returns
-  `{:ok, pid}`, where pid is the pid of the server. If there already exists a
-  process with the specified server name, the function returns
-  `{:error, {:already_started, pid}}` with the pid of that process.
-
-  If the `init/1` callback fails with `reason`, the function returns
-  `{:error, reason}`. Otherwise, if it returns `{:stop, reason}`
-  or `:ignore`, the process is terminated and the function returns
-  `{:error, reason}` or `:ignore`, respectively.
+  Retrieves the base GitHub URL, including an OAuth credential if one is set
+  in the application's configuration.
   """
-  @spec create(Map) :: {:ok, pid} | {:error, String.t()}
-  def create(github_options) do
-    Agent.start_link(fn -> github_options end)
-  end
-
-  @doc """
-  Method to generate a new deployment repo
-
-  ## Options
-  
-  The `github_options` option defines the Map of configuration options that should be 
-  passed to Github.  The following values are required:
-    * :repo_url - the fully qualified github repo URL (i.e. myorg/<repo>)
-    * :output_dir - the directory containing the git repo
-    * :branch - github branch
-
-  ## Return Values
-
-  pid
-  """
-  @spec create!(Map) :: pid
-  def create!(github_options) do
-    case create(github_options) do
-      {:ok, github} -> github
-      {:error, reason} -> raise "Failed to create OpenAperture.Builder.Github:  #{reason}"
-    end
-  end  
-
-  @doc """
-  Method to get options from a Github agent.
-   
-  ## Options
-   
-  The `github` option defines Github agent.
-   
-  ## Return values
-   
-  Map
-  """
-  @spec get_options(pid) :: Map
-  def get_options(github) do
-    if (github == nil) do
-      Logger.error("Unable to retrieve github options - github agent is invalid!")
-      nil
-    else
-      Logger.debug("Retrieve options for github agent #{inspect github}...")
-      Agent.get(github, fn options -> options end)      
-    end
-  end   
-
-  @doc """
-  Method to execute a git clone against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  ## Return values
-
-  :ok or {:error, reason}
-  """
-  @spec clone(pid) :: :ok | {:error, String.t()}
-  def clone(github) do
-    Logger.debug ("Attempting to clone github agent #{inspect github}")
-    github_options = get_options(github)
-    Logger.debug("Github options: #{inspect github_options}")
-
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.debug("Cloning #{github_options[:repo_url]} into directory #{github_options[:output_dir]}...")
-      case Util.execute_command("git clone #{github_options[:repo_url]} #{github_options[:output_dir]}", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully cloned repository")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred cloning repository:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end      
+  @spec get_github_url :: String.t
+  def get_github_url() do
+    case Application.get_env(:github, :user_credentials) do
+      nil -> "https://github.com/"
+      creds -> "https://" <> creds <> "@github.com/"
     end
   end
 
   @doc """
-  Method to execute a git checkout against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  ## Return values
-
-  :ok or {:error, reason}
+  Clones a remote git repository to a local path.
   """
-  @spec checkout(pid) :: :ok | {:error, String.t()}
-  def checkout(github) do
-    github_options = get_options(github)
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.info("Switching to branch/tag #{github_options[:branch]} into directory #{github_options[:output_dir]}...")
-      case Util.execute_command("git checkout #{github_options[:branch]}", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully performed git checkout")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred performing git checkout:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end
+  @spec clone(Repo.t) :: :ok | {:error, String.t}
+  def clone(repo) do
+    Logger.debug "Attempting to clone GitHub repo: #{repo.remote_url} into #{repo.local_repo_path}"
+
+    clone_command = "git clone " <> repo.remote_url <> " " <> repo.local_repo_path
+
+    case System.cmd("/bin/bash", ["-c", clone_command], [{:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully cloned repository\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing  `git clone` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
     end
   end
 
   @doc """
-  Method to execute a git add against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  ## Return values
-
-  :ok or {:error, reason}
+  Executes a `git checkout` against a specific branch, tag, or hash.
   """
-  @spec add(pid, String.t()) :: :ok | {:error, String.t()}
-  def add(github, filepath) do
-    github_options = get_options(github)
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.info("Staging file #{github_options[:output_dir]} for commit...")
-      case Util.execute_command("git add #{filepath}", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully performed git add")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred performing git add:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end
+  @spec checkout(Repo.t) :: :ok | {:error, String.t}
+  def checkout(repo) do
+    Logger.info("Switching to branch/tag #{repo.branch} in directory #{repo.local_repo_path}...")
+    checkout_command = "git checkout " <> repo.branch
+    case System.cmd("/bin/bash", ["-c", checkout_command], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully performed `git checkout`\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing `git checkout` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
     end
   end
 
   @doc """
-  Method to execute a git add -A for a directory, against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  The `dir` option defines the desired directory to add
-
-  ## Return values
-
-  :ok or {:error, reason}
+  Stages a file to the local git repository.
   """
-  @spec add_all(pid, String.t()) :: :ok | {:error, String.t()}
-  def add_all(github, dir) do
-    github_options = get_options(github)
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.info("Staging file #{github_options[:output_dir]} for commit...")
-      case Util.execute_command("git add -A #{dir}", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully performed git add all")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred performing git add all:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end
-    end
-  end  
-
-  @doc """
-  Method to execute a git commit against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  ## Return values
-
-  :ok or {:error, reason}
-  """
-  @spec commit(pid, String.t()) :: :ok | {:error, String.t()}
-  def commit(github, message) do
-    github_options = get_options(github)
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.info ("Committing changes...")
-      case Util.execute_command("git commit -m \"#{message}\"", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully performed git commit")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred performing git commit:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end
+  @spec add(Repo.t, String.t) :: :ok | {:error, String.t}
+  def add(repo, path) do
+    Logger.info("Staging file #{path} for commit...")
+    add_command = "git add " <> path
+    case System.cmd("/bin/bash", ["-c", add_command], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully performed `git add`\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing `git add` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
     end
   end
 
   @doc """
-  Method to execute a git push against a specified Github agent.
-
-  ## Options
-
-  The `github` option defines the Github agent against which the commands should be executed.
-
-  ## Return values
-
-  :ok or {:error, reason}
+  Executes a git add -A for a directory.
   """
-  @spec push(pid) :: :ok | {:error, String.t()}
-  def push(github) do
-    github_options = get_options(github)
-    if (github_options == nil) do
-      {:error, "invalid github agent!"}
-    else
-      Logger.info ("Pushing staged commit to repository #{github_options[:repo_url]}...")
-      case Util.execute_command("git push", "#{github_options[:output_dir]}") do
-        {message, 0} ->
-          Logger.debug ("Successfully performed git push")
-          Logger.debug(message)
-          :ok
-        {message, _} ->
-          error_msg = "An error occurred performing git push:\n#{message}"
-          Logger.error(error_msg)
-          {:error, error_msg}
-      end
+  @spec add_all(Repo.t, String.t) :: :ok | {:error, String.t}
+  def add_all(repo, path) do
+    add_command = "git add -A " <> path
+    case System.cmd("/bin/bash", ["-c", add_command], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully performed `git add all`\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing  `git add all` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
+    end
+  end
+
+  @doc """
+  Executes a git commit for the local repository.
+  """
+  @spec commit(Repo.t, String.t) :: :ok | {:error, String.t}
+  def commit(repo, message) do
+    commit_command = "git commit -m \"" <> message <> "\""
+    case System.cmd("/bin/bash", ["-c", commit_command], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully performed `git commit`\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing `git commit` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
+    end
+  end
+
+  @doc """
+  Executes a git push for a local repository. Uses the default remote.
+  """
+  @spec push(Repo.t) :: :ok | {:error, String.t}
+  def push(repo) do
+    case System.cmd("/bin/bash", ["-c", "git push"], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully performed `git push`\n#{message}"
+        :ok
+      {message, code} ->
+        error_message = "An error occurred performing `git push` (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
     end
   end
 end

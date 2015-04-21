@@ -27,16 +27,10 @@ config :openaperture_builder,
 	docker_registry_email: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_EMAIL"),
 	docker_registry_password: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_PASSWORD")
 
-config :openaperture_manager_api,
-	manager_url: System.get_env("OPENAPERTURE_MANAGER_URL"),
-	oauth_login_url: System.get_env("OPENAPERTURE_OAUTH_LOGIN_URL"),
-	oauth_client_id: System.get_env("OPENAPERTURE_OAUTH_CLIENT_ID"),
-	oauth_client_secret: System.get_env("OPENAPERTURE_OAUTH_CLIENT_SECRET")
-
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-     import_config "#{Mix.env}.exs"
+import_config "#{Mix.env}.exs"
