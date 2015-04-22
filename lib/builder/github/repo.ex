@@ -49,37 +49,38 @@ defmodule OpenAperture.Builder.GitHub.Repo do
     iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("https://github.com/test_user/test_project.git")
     "https://github.com/test_user/test_project.git"    
     iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("git@github.com:test_user/test_project.git")
-    "https://github.com/test_user/test_project.git"        
+    "git@github.com:test_user/test_project.git"        
   """
   @spec resolve_github_repo_url(String.t) :: String.t
   def resolve_github_repo_url(raw_url) do
-    if  String.starts_with?(raw_url, "http://") || 
-        String.starts_with?(raw_url, "https://") ||
-        String.starts_with?(raw_url, "git@") do
-      parsed_url = URI.parse(raw_url)
+    cond do
+      raw_url == nil -> nil
+      #don't attempt to parse an SSH-formatted request
+      String.starts_with?(raw_url, "git@") -> raw_url
+      String.starts_with?(raw_url, "http://") || String.starts_with?(raw_url, "https://") ->
+        parsed_url = URI.parse(raw_url)
 
-      github_org_project = parsed_url.path
-      github_org_project = if String.starts_with?(github_org_project, "/") do
-        String.slice(github_org_project, 1, String.length(github_org_project))
-      else
-        github_org_project
-      end
+        github_org_project = parsed_url.path
+        github_org_project = if String.starts_with?(github_org_project, "/") do
+          String.slice(github_org_project, 1, String.length(github_org_project))
+        else
+          github_org_project
+        end
 
-      github_org_project = if String.ends_with?(github_org_project, "/") do
-        String.slice(github_org_project, 0, String.length(github_org_project)-1)
-      else
-        github_org_project
-      end
+        github_org_project = if String.ends_with?(github_org_project, "/") do
+          String.slice(github_org_project, 0, String.length(github_org_project)-1)
+        else
+          github_org_project
+        end
 
-      github_org_project = if String.ends_with?(github_org_project, ".git") do
-        String.slice(github_org_project, 0, String.length(github_org_project)-4)
-      else
-        github_org_project
-      end
+        github_org_project = if String.ends_with?(github_org_project, ".git") do
+          String.slice(github_org_project, 0, String.length(github_org_project)-4)
+        else
+          github_org_project
+        end
 
-      get_github_repo_url(github_org_project)
-    else
-      get_github_repo_url(raw_url)
+        get_github_repo_url(github_org_project)        
+      true -> get_github_repo_url(raw_url)
     end
   end
 

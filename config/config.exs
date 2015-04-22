@@ -16,9 +16,6 @@ use Mix.Config
 #       metadata: [:user_id]
 
 config :openaperture_builder,
-	broker_id: System.get_env("OPENAPERTURE_BROKER_ID"),
-	exchange_id: System.get_env("OPENAPERTURE_EXCHANGE_ID"),
-	github_user_credentials: System.get_env("OPENAPERTURE_GITHUB_OAUTH_TOKEN"),
 	tmp_dir: System.get_env("OPENAPERTURE_TMPDIR") || "/tmp/openaperture",
 	docker_registry_url: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_USERNAME") || "https://hub.docker.com",
 	docker_registry_username: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_USERNAME"),

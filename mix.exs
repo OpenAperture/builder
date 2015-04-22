@@ -34,6 +34,7 @@ defmodule OpenAperture.Builder.Mixfile do
       {:openaperture_manager_api, git: "https://github.com/OpenAperture/manager_api.git",ref: "32986942e702dc4b32ab9118362cda992949fa6c", override: true},
       {:openaperture_fleet, git: "https://github.com/OpenAperture/fleet.git", ref: "7aa864eeb3876b476c89d58c56364cbb0fa2fb08", override: true},
       {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "488832b216a1a139a6c58d788083cf5054b3dbe8", override: true},
+      {:openaperture_overseer_api, git: "https://github.com/OpenAperture/overseer_api.git", ref: "515a4ad10c2a078dc0faee501d6109335f53b3e6", override: true},
       {:timex, "~> 0.12.9"},
       
       {:meck, "0.8.2", only: :test},

@@ -14,3 +14,9 @@ config :openaperture_builder,
 	docker_registry_username: "user",
 	docker_registry_email: "user@test.com",
 	docker_registry_password: "pass"
+
+config :openaperture_overseer_api,
+	module_type: :test,
+	autostart: false,	
+	exchange_id: "1",
+	broker_id: "1"
