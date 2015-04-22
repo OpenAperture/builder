@@ -2,7 +2,8 @@ require Logger
 
 defmodule OpenAperture.Builder.DeploymentRepo do
 
-  alias OpenAperture.Builder.Workflow
+  alias OpenAperture.WorkflowOrchestratorApi.Workflow
+  alias OpenAperture.WorkflowOrchestratorApi.Request
   alias OpenAperture.Builder.Github
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.SourceRepo
@@ -12,20 +13,26 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   defstruct output_dir: nil,
             github_deployment_repo: nil,
-            github_source_repo: nil,
+            source_repo: nil,
             etcd_token: nil,
-            docker_repo_name: nil
+            docker_repo: nil,
+            docker_repo_name: nil,
+            docker_build_etcd_token: nil,
+            force_build: false
 
+  @type t :: %__MODULE__{}
+  
   @moduledoc """
   This module provides a data struct to represent an openaperture <project>_docker repository. Initializing the struct
   will download the contents of the repo and populate the struct with all available information
   """
 
   @doc """
-  Method to create a populated DeploymentRepo from a Workflow
+  Method to create a populated DeploymentRepo from a Request
   """
-  @spec init_from_workflow(Workflow.t) :: {:ok, DeploymentRepo} | {:error, term}
-  def init_from_workflow(workflow) do
+  @spec init_from_request(Request.t) :: {:ok, DeploymentRepo} | {:error, term}
+  def init_from_request(request) do
+    workflow = request.workflow
     cond do
       workflow.source_repo_git_ref == nil -> {:error, "Missing source_repo_git_ref"}
       workflow.deployment_repo == nil -> {:error, "Missing deployment_repo"}
@@ -33,7 +40,9 @@ defmodule OpenAperture.Builder.DeploymentRepo do
         output_dir = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/deployment_repos/#{workflow.id}"
         try do
           repo = %OpenAperture.Builder.DeploymentRepo{
-            output_dir: output_dir
+            output_dir: output_dir,
+            docker_build_etcd_token: request.docker_build_etcd_token,
+            force_build: request.force_build
           }
 
           if workflow.deployment_repo_git_ref == nil do
@@ -45,7 +54,8 @@ defmodule OpenAperture.Builder.DeploymentRepo do
           repo = %{repo | source_repo: populate_source_repo!(repo, workflow)}
           repo = %{repo | etcd_token: populate_etcd_token!(repo)}
           repo = %{repo | docker_repo_name: populate_docker_repo_name!(repo)}
-
+          repo = %{repo | docker_repo: populate_docker_repo!(repo)}
+          
           {:ok, repo}
         rescue
           e in RuntimeError -> {:error, e.message}
@@ -191,6 +201,55 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       {:error, "Unable to get the docker repo name, docker_repo_name not specified and #{repo.output_dir}/docker.json does not exist!"}
     end
   end
+
+  @doc """
+  Method to retrieve the associated Docker repository name
+  """
+  @spec populate_docker_repo!(DeploymentRepo) :: String.t
+  def populate_docker_repo!(repo) do
+    case populate_docker_repo(repo) do
+      {:ok, docker_repo} -> docker_repo
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @spec populate_docker_repo(DeploymentRepo) :: {:ok, String.t()} | {:error, String.t()}
+  defp populate_docker_repo(repo) do
+    dockerhub_repo = %Docker{
+      output_dir: repo.output_dir, 
+      docker_repo_url: repo.docker_repo_name,
+      docker_host: repo.docker_build_etcd_token,
+      registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+      registry_username: Application.get_env(:openaperture_builder, :docker_registry_username),
+      registry_email: Application.get_env(:openaperture_builder, :docker_registry_email),
+      registry_password: Application.get_env(:openaperture_builder, :docker_registry_password)
+    }
+
+    docker_repo = if File.exists?("#{repo.output_dir}/docker.json") do
+      case JSON.decode(File.read!("#{repo.output_dir}/docker.json")) do
+        {:ok, json} -> 
+          case json["docker_registry_url"] do
+            nil -> dockerhub_repo
+            _   -> 
+              %Docker{
+                output_dir: repo.output_dir, 
+                docker_repo_url: repo.docker_repo_name,
+                docker_host: repo.docker_build_etcd_token,
+                registry_url: Application.get_env(:openaperture_builder, :json["docker_registry_url"]),
+                registry_username: Application.get_env(:openaperture_builder, json["docker_registry_username"]),
+                registry_email: Application.get_env(:openaperture_builder, json["docker_registry_email"]),
+                registry_password: Application.get_env(:openaperture_builder, json["docker_registry_password"])
+              }              
+          end
+        {:error, reason} -> dockerhub_repo
+      end
+    else
+      dockerhub_repo
+    end
+
+    Docker.init(docker_repo)
+  end
+
 
   @spec update_file(String.t, String.t, List, GithubRepo.t, term) :: term
   defp update_file(template_path, output_path, template_options, github_deployment_repo, type) do
@@ -394,31 +453,44 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   """
   @spec create_docker_image(DeploymentRepo, List) :: :ok | {:error, String.t()}
   def create_docker_image(repo, tags) do
-    case Docker.create(%{output_dir: repo.output_dir, docker_repo_url: repo.docker_repo_name}) do
-      {:ok, docker} ->
-        repo = %{repo | docker: docker}
-        try do
-          case Docker.build(docker) do
-            {:ok, image_id} ->
-              if (image_id != nil && image_id != "") do
-                repo = %{repo | image_id: image_id}
-                case Docker.tag(repo.docker, image_id, tags) do
-                  {:ok, _} ->
-                    case Docker.push(repo.docker) do
-                      {:ok, _} -> :ok
-                      {:error, reason} -> {:error, reason}
-                    end
-                  {:error, reason} -> {:error, reason}
-                end
-              else
-                {:error,"docker build failed to produce a valid image!"}
+    # attempt to do a docker pull to determine if image already exists (unless force_build is true)
+    # Unfortunately it's not possible to browse or search private repos (https://docs.docker.com/docker-hub/repos/#private-repositories),
+    # so a pull the only option available
+    if repo.force_build == true do
+      requires_build = true
+    else
+      requires_build = case Docker.pull(repo.docker_repo, repo.docker_repo_name) do
+        :ok -> false
+        {:error, error_msg} -> true
+      end
+    end
+
+    if requires_build do
+      case Docker.build(repo.docker_repo) do
+        {:ok, image_id} ->
+          try do
+            if (image_id != nil && String.length(image_id) > 0) do
+              case Docker.tag(repo.docker_repo, image_id, tags) do
+                {:ok, _} ->
+                  case Docker.push(repo.docker_repo) do
+                    {:ok, _} -> :ok
+                    {:error, reason} -> {:error, reason}
+                  end
+                {:error, reason} -> {:error, reason}
               end
-            {:error, reason} -> {:error,reason}
+            else
+              {:error,"Docker build failed to produce a valid image!"}
+            end
+          after
+            Docker.cleanup_image_cache(repo.docker_repo, image_id)              
           end
-        after
-          Docker.cleanup_image_cache(repo.docker)
-        end
-      {:error, reason} -> {:error,reason}
+        {:error, reason} -> 
+          Docker.cleanup_image_cache(repo.docker_repo, repo.docker_repo_name)
+          {:error,reason}
+      end      
+    else
+      Docker.cleanup_image_cache(repo.docker_repo, repo.docker_repo_name)
+      :ok
     end
   end
 end

@@ -253,7 +253,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
-    :meck.expect(DeploymentRepo, :init_from_workflow, fn _ -> {:ok, %{}} end)
+    :meck.expect(DeploymentRepo, :init_from_request, fn _ -> {:ok, %{}} end)
     :meck.expect(DeploymentRepo, :cleanup, fn _ -> :ok end)
 
     :meck.new(MessageManager, [:passthrough])
@@ -289,7 +289,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
-    :meck.expect(DeploymentRepo, :init_from_workflow, fn _ -> {:error, "bad news bears"} end)
+    :meck.expect(DeploymentRepo, :init_from_request, fn _ -> {:error, "bad news bears"} end)
 
     :meck.new(MessageManager, [:passthrough])
     :meck.expect(MessageManager, :remove, fn _ -> %{} end)    

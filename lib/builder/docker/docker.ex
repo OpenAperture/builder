@@ -1,12 +1,20 @@
 require Logger
 
 defmodule OpenAperture.Builder.Docker do
+  alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.Util
+
   defstruct docker_repo_url: nil,
             docker_host: nil,
             output_dir: nil,
             image_id: nil,
-            authenticated: false
+            authenticated: false,
+            registry_url: nil,
+            registry_username: nil,
+            registry_email: nil,
+            registry_password: nil
+
+  @type t :: %__MODULE__{}
 
   @moduledoc """
   This module contains the logic for interacting with Docker.
@@ -21,6 +29,10 @@ defmodule OpenAperture.Builder.Docker do
       empty(docker.docker_repo_url) -> {:error, "Missing docker_repo_url"}
       empty(docker.docker_host) -> {:error, "Missing docker_host"}
       empty(docker.output_dir) -> {:error, "Missing output_dir"}
+      empty(docker.registry_url) -> {:error, "Missing registry_url"}
+      empty(docker.registry_username) -> {:error, "Missing registry_username"}
+      empty(docker.registry_email) -> {:error, "Missing registry_email"}
+      empty(docker.registry_password) -> {:error, "Missing registry_password"}
       true -> {:ok, docker}
     end
   end
@@ -118,7 +130,7 @@ defmodule OpenAperture.Builder.Docker do
   @doc """
   Method to cleanup any dangling images that remain on the host
   """
-  @spec cleanup_dangling_images(pid) :: :ok
+  @spec cleanup_dangling_images(Docker) :: :ok
   def cleanup_dangling_images(docker) do
     Logger.debug("Disabled dangling image cleanup")
     cleanup_exited_containers(docker)
@@ -231,7 +243,7 @@ defmodule OpenAperture.Builder.Docker do
   @doc """
   Method to find all of the containers running on a docker host
   """
-  @spec get_containers(pid) :: List
+  @spec get_containers(Docker) :: List
   def get_containers(docker) do
     Logger.info ("Retrieving all containers...")
     case  execute_docker_cmd(docker, "docker ps -aq") do
@@ -280,7 +292,7 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to execute a docker build against a specified Docker agent.
+  Method to execute a docker build.
   """
   @spec build(Docker) :: {:ok, String.t()} | {:error, String.t()}
   def build(docker) do
@@ -308,7 +320,7 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to execute add a docker tag against a specified Docker agent.
+  Method to execute add a docker tag.
   """
   @spec tag(Docker, String.t(), [String.t()]) :: {:ok, String.t()} | {:error, String.t()}
   def tag(docker, image_id, [tag|remaining_tags]) do   
@@ -325,15 +337,15 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to execute add a docker tag against a specified Docker agent.
+  Method to execute add a docker tag.
   """
-  @spec tag(pid, String.t(), [String.t()]) :: :ok | :error
+  @spec tag(Docker, String.t(), [String.t()]) :: :ok | :error
   def tag(_, _, []) do
     {:ok, ""}
   end  
 
   @doc """
-  Method to execute a docker push against a specified Docker agent.
+  Method to execute a docker push to a specified Docker registry.
   """
   @spec push(Docker) :: :ok | :error
   def push(docker) do
@@ -350,7 +362,7 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to execute a docker pull against a specified Docker agent.
+  Method to execute a docker pull from a specified Docker registry.
   """
   @spec pull(Docker, String.t()) :: :ok | {:error, String.t()}
   def pull(docker, image_name) do
@@ -367,36 +379,30 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to execute a docker login against a specified Docker agent.
+  Method to execute a docker login against a specified Docker registry.
   """
   @spec login(Docker) :: :ok | :error
   def login(docker) do
     Logger.info ("Requesting docker login...")
-    case dockerhub_login(docker) do
-      {_, 0} -> :ok
-      {login_message, _} -> {:error, "Docker login has failed:  #{login_message}"}      
+
+    if docker.authenticated == true do
+      :ok
+    else
+      docker_cmd = "DOCKER_HOST=#{docker.docker_host} docker login #{docker.registry_url} -e=\"#{docker.registry_email}\" -u=\"#{docker.registry_username}\" -p=\"#{docker.registry_password}\""
+      Logger.debug ("Executing Docker command:  #{docker_cmd}")
+      case Util.execute_command(docker_cmd) do
+        {_, 0} -> :ok
+        {login_message, _} -> {:error, "Docker login has failed:  #{login_message}"}
+      end
     end
   end  
 
   @doc false
-  # Method to execute a Docker login to Docker Hub
-  @spec dockerhub_login(Docker) :: {Collectable.t, exit_status :: non_neg_integer}
-  defp dockerhub_login(docker) do
-    if docker.authenticated == true do
-      {"Login Successful", 0}
-    else
-      docker_cmd = "DOCKER_HOST=#{docker.docker_host} docker login #{Application.get_env(:openaperture_builder, :docker_registry_url)} -e=\"#{Application.get_env(:openaperture_builder, :docker_registry_email)}\" -u=\"#{Application.get_env(:openaperture_builder, :docker_registry_username)}\" -p=\"#{Application.get_env(:openaperture_builder, :docker_registry_password)}\""
-      Logger.debug ("Executing Docker command:  #{docker_cmd}")
-      Util.execute_command(docker_cmd)
-    end
-  end
-
-  @doc false
   # Method to execute a Docker command.  Will wrap the command with a Docker login and store stdout and stderr
-  @spec execute_docker_cmd(pid, String.t()) :: {:ok, String.t(), String.t()} | {:error, String.t(), String.t()}
+  @spec execute_docker_cmd(Docker.t, String.t()) :: {:ok, String.t(), String.t()} | {:error, String.t(), String.t()}
   defp execute_docker_cmd(docker, docker_cmd) do
-    case dockerhub_login(docker) do
-      {_, 0} ->
+    case login(docker) do
+      :ok ->
         File.mkdir_p("#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker")
 
         stdout_file = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{UUID.uuid1()}.log"
@@ -415,8 +421,7 @@ defmodule OpenAperture.Builder.Docker do
           File.rm_rf(stdout_file)
           File.rm_rf(stderr_file)
         end
-      {login_message, _} ->
-        {:error, "Dockerhub login has failed.", login_message}
+      {:error, reason} -> {:error, reason}
     end  
   end
 

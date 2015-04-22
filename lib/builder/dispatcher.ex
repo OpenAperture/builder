@@ -72,9 +72,9 @@ defmodule OpenAperture.Builder.Dispatcher do
     subscribe(options, workflow_orchestration_queue, fn(payload, _meta, %{delivery_tag: delivery_tag} = async_info) -> 
       MessageManager.track(async_info)
 
-      request = BuilderRequest.from_payload(payload)
-      request = %{request | delivery_tag: delivery_tag}
-      process_request(request)
+      builder_request = BuilderRequest.from_payload(payload)
+      builder_request = %{builder_request | delivery_tag: delivery_tag}
+      process_request(builder_request)
     end)
   end
 
@@ -87,19 +87,19 @@ defmodule OpenAperture.Builder.Dispatcher do
 
   """
   @spec process_request(BuilderRequest.t) :: term
-  def process_request(request) do
-    case DeploymentRepo.init_from_workflow(request.workflow) do
+  def process_request(builder_request) do
+    case DeploymentRepo.init_from_request(builder_request.orchestrator_request) do
       {:error, reason} -> {:error, reason}
       {:ok, deployment_repo} -> 
         try do
-          request = %{request | deployment_repo: deployment_repo}
-          execute_milestone(:config, {:ok, request})
+          builder_request = %{builder_request | deployment_repo: deployment_repo}
+          execute_milestone(:config, {:ok, builder_request})
         after
           DeploymentRepo.cleanup(deployment_repo)
         end
     end
   after
-    acknowledge(request.delivery_tag)
+    acknowledge(builder_request.delivery_tag)
   end
 
   @doc """
