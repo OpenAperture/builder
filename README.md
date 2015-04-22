@@ -15,7 +15,7 @@ The WorkflowOrchestrator module is responsible for the following actions within 
 
 The following message(s) may be sent to the Builder.  A Workflow is a OpenAperture construct that can be created/retrieved at /workflow.
 
-* Builder
+* Request config & build for a Workflow
 	* Queue:  builder
 	* Payload (Map)
 		* force_build 
