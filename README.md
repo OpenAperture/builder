@@ -79,21 +79,26 @@ The following configuration values must be defined either as environment variabl
 * Dockerhub Registry URL
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the URL for that registry, defaults to dockerhub.
+	* Environment Variable:  DOCKER_REGISTRY_URL	
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_url
 * Docker Registry Username
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the username for that registry, defaults to dockerhub.
+	* Environment Variable:  DOCKER_REGISTRY_USERNAME	
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_username
 * Docker Registry Email
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the email for that registry, defaults to dockerhub.
+	* Environment Variable:  DOCKER_REGISTRY_EMAIL	
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_email
 * Docker Registry Password
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the password for that registry, defaults to dockerhub.
+	* Environment Variable:  DOCKER_REGISTRY_PASSWORD	
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_password
 * Github OAuth Credentials
 	* Type:  String
+	* Environment Variable:  GITHUB_OAUTH_TOKEN
 	* Description:  For private repositories, specify a Github OAuth token with access to those repositories
   * Environment Configuration (.exs): :github, :user_credentials
 

@@ -16,11 +16,11 @@ use Mix.Config
 #       metadata: [:user_id]
 
 config :openaperture_builder,
-	tmp_dir: System.get_env("OPENAPERTURE_TMPDIR") || "/tmp/openaperture",
-	docker_registry_url: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_USERNAME") || "https://hub.docker.com",
-	docker_registry_username: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_USERNAME"),
-	docker_registry_email: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_EMAIL"),
-	docker_registry_password: System.get_env("OPENAPERTURE_DOCKER_REGISTRY_PASSWORD")
+	tmp_dir: System.get_env("BUILDER_TMPDIR") || "/tmp/openaperture",
+	docker_registry_url: System.get_env("DOCKER_REGISTRY_URL") || "https://hub.docker.com",
+	docker_registry_username: System.get_env("DOCKER_REGISTRY_USERNAME"),
+	docker_registry_email: System.get_env("DOCKER_REGISTRY_EMAIL"),
+	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD")
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
