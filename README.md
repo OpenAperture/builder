@@ -110,7 +110,7 @@ mix do deps.get, deps.compile
 To startup the application, use mix run:
 
 ```iex
-MIX_ENV=prod elixir --sname workflow_orchestrator -S mix run --no-halt
+MIX_ENV=prod elixir --sname builder -S mix run --no-halt
 ```
 
 ### Testing 
