@@ -4,27 +4,51 @@ require Timex.Date
 defmodule OpenAperture.Builder.Milestones.Config do
   use Timex
   
+  alias OpenAperture.Builder.Request, as: BuilderRequest
   alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.Builder.DeploymentRepo
+  alias OpenAperture.Builder.SourceRepo
 
   @moduledoc """
   This module contains the logic for the "Config" Workflow milestone
   """    
 
-  def execute(request) do
-  	request = %{request | orchestrator_request: Workflow.publish_success_notification(request.workflow, "Requesting configuration of repository #{request.workflow.deployment_repo}...")}
+  @doc """
+  Method to execute the milestone
 
-    dockerfile_commit_required = DeploymentRepo.resolve_dockerfile_template(request.deployment_repo, [commit_hash: request.workflow.source_repo_git_ref, timestamp: get_timestamp])
-    units_commit_required = DeploymentRepo.resolve_service_file_templates(request.deployment_repo, [commit_hash: request.workflow.source_repo_git_ref, timestamp: get_timestamp, dst_port: "<%= dst_port %>"])
+  ## Options
+
+  The `builder_request` option defines the Map containing the BuilderRequest
+
+  ## Return Values
+
+  {:ok, BuilderRequest} | {:error, String.t, BuilderRequest}
+  """
+  @spec execute(BuilderRequest) :: {:ok, BuilderRequest} | {:error, String.t, BuilderRequest}
+  def execute(builder_request) do
+    #load any custom hipchat room notifications
+    builder_request = unless builder_request.deployment_repo.source_repo == nil do
+      info = case SourceRepo.get_openaperture_info(builder_request.deployment_repo.source_repo) do
+        nil -> builder_request
+        info -> BuilderRequest.set_notifications_config(builder_request, info["deployments"]["notifications"])
+      end
+    else
+      builder_request
+    end
+
+  	builder_request = BuilderRequest.publish_success_notification(builder_request, "Requesting configuration of repository #{builder_request.workflow.deployment_repo}...")
+
+    dockerfile_commit_required = DeploymentRepo.resolve_dockerfile_template(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp])
+    units_commit_required = DeploymentRepo.resolve_service_file_templates(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp, dst_port: "<%= dst_port %>"])
 
     if (dockerfile_commit_required || units_commit_required) do
-      commit_result = case DeploymentRepo.checkin_pending_changes(request.deployment_repo, "Deployment for commit #{request.workflow.source_repo_git_ref}") do
-        :ok -> {:ok, request}
-        {:error, reason} -> {:error, "Failed to commit changes:  #{inspect reason}", request}
+      commit_result = case DeploymentRepo.checkin_pending_changes(builder_request.deployment_repo, "Deployment for commit #{builder_request.workflow.source_repo_git_ref}") do
+        :ok -> {:ok, builder_request}
+        {:error, reason} -> {:error, "Failed to commit changes:  #{inspect reason}", builder_request}
       end
     else
       Logger.debug ("There are no files to commit (templating required no file changes)")
-      {:ok, request}
+      {:ok, builder_request}
     end
   end
 

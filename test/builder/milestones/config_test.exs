@@ -3,6 +3,7 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
 
   alias OpenAperture.Builder.Milestones.Config
   alias OpenAperture.Builder.DeploymentRepo
+  alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Request, as: BuilderRequest
 
 	alias OpenAperture.WorkflowOrchestratorApi.Request
@@ -78,4 +79,37 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
   	:meck.unload(DeploymentRepo)
     :meck.unload(Workflow)
   end  
+
+  test "execute - set notifications config" do
+    request = %BuilderRequest{
+      workflow: %Workflow{},
+      orchestrator_request: %Request{},
+      deployment_repo: %DeploymentRepo{
+        etcd_token: "123abc",
+        source_repo: %SourceRepo{}
+      }
+    }
+
+    :meck.new(DeploymentRepo, [:passthrough])
+    :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> true end)
+    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)    
+    :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> :ok end)
+
+    :meck.new(Workflow, [:passthrough])
+    :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
+
+    :meck.new(SourceRepo, [:passthrough])
+    :meck.expect(SourceRepo, :get_openaperture_info, fn _ -> %{
+      "deployments" => %{
+        "notifications" => %{}
+      }
+    } end)
+
+    {:ok, returned_request} = Config.execute(request)
+    assert returned_request != nil
+  after
+    :meck.unload(DeploymentRepo)
+    :meck.unload(Workflow)
+    :meck.unload(SourceRepo)
+  end
 end
