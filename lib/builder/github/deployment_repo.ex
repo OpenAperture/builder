@@ -45,11 +45,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
             force_build: request.force_build
           }
 
-          if workflow.deployment_repo_git_ref == nil do
-            deployment_repo_git_ref = "master"
-          else
-            deployment_repo_git_ref = workflow.deployment_repo_git_ref
-          end
           repo = %{repo | github_deployment_repo: download!(repo, workflow)}
           repo = %{repo | source_repo: populate_source_repo!(repo, workflow)}
           repo = %{repo | etcd_token: populate_etcd_token!(repo)}
@@ -64,7 +59,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   end
 
   @doc """
-  Method to cleanup any artifacts associated with the deploy repo PID
+  Method to cleanup any local artifacts associated with the repository
   """
   @spec cleanup(DeploymentRepo) :: term
   def cleanup(repo) do
@@ -72,7 +67,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   end
 
   @doc """
-  Method to download a DeploymentRepo locally
+  Method to download the repository locally
   """
   @spec download!(DeploymentRepo, Workflow.t) :: GithubRepo.t
   def download!(repo, workflow) do
@@ -82,13 +77,21 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
+  @doc """
+  Method to download the repository locally
+  """
   @spec download(DeploymentRepo, Workflow.t) :: {:ok, GithubRepo} | {:error, String.t()}
   defp download(repo, workflow) do
-		Logger.info "Downloading Deployment repo..."
+    if workflow.deployment_repo_git_ref == nil do
+      deployment_repo_git_ref = "master"
+    else
+      deployment_repo_git_ref = workflow.deployment_repo_git_ref
+    end
+ 
     github_repo = %GithubRepo{
       local_repo_path: repo.output_dir, 
       remote_url: GithubRepo.resolve_github_repo_url(workflow.deployment_repo), 
-      branch: workflow.deployment_repo_git_ref
+      branch: deployment_repo_git_ref
     }
 
     case Github.clone(github_repo) do
@@ -148,8 +151,11 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
+  @doc """
+  Method to resolve the etcd token
+  """
   @spec populate_etcd_token!(DeploymentRepo) :: String.t
-  defp populate_etcd_token!(repo) do
+  def populate_etcd_token!(repo) do
     case populate_etcd_token(repo) do
       {:ok, token} -> token
       {:error, reason} -> raise reason
@@ -235,10 +241,10 @@ defmodule OpenAperture.Builder.DeploymentRepo do
                 output_dir: repo.output_dir, 
                 docker_repo_url: repo.docker_repo_name,
                 docker_host: repo.docker_build_etcd_token,
-                registry_url: Application.get_env(:openaperture_builder, :json["docker_registry_url"]),
-                registry_username: Application.get_env(:openaperture_builder, json["docker_registry_username"]),
-                registry_email: Application.get_env(:openaperture_builder, json["docker_registry_email"]),
-                registry_password: Application.get_env(:openaperture_builder, json["docker_registry_password"])
+                registry_url: json["docker_registry_url"],
+                registry_username: json["docker_registry_username"],
+                registry_email: json["docker_registry_email"],
+                registry_password: json["docker_registry_password"]
               }              
           end
         {:error, reason} -> dockerhub_repo
@@ -249,7 +255,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
     Docker.init(docker_repo)
   end
-
 
   @spec update_file(String.t, String.t, List, GithubRepo.t, term) :: term
   defp update_file(template_path, output_path, template_options, github_deployment_repo, type) do
@@ -310,15 +315,60 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
+  @doc false
+  # Method to resolve a Fleet service files.
+  #
+  ## Options
+  #
+  # The `[filename|remaining_files]` options defines the list of file names to review
+  #
+  # The `source_dir` options defines where the source files exist
+  #
+  # The `replacements` options defines which values should be replaced.
+  #
+  ## Return Values
+  #
+  # boolean; true if file was replaced and a commit add was performed)
+  #
+
+  @spec resolve_service_file(List, term, String.t(), Map, term) :: term
+  defp resolve_service_file([filename|remaining_files], github_deployment_repo, source_dir, replacements, units_commit_required) do
+    if String.ends_with?(filename, ".service.eex") do
+      template_path = "#{source_dir}/#{filename}"
+      output_path = "#{source_dir}/#{String.slice(filename, 0..-5)}"
+
+      Logger.info("Resolving service file #{output_path} from template #{template_path}...")
+      service_file = EEx.eval_file "#{source_dir}/#{filename}", replacements
+
+      file_is_identical = false
+      if File.exists?(output_path) do
+        existing_service_file = File.read!(output_path)
+        if (service_file == existing_service_file) do
+          file_is_identical = true
+        end
+      end
+
+      unless (file_is_identical) do
+        File.rm_rf(output_path)
+        File.write!(output_path, service_file)
+        Github.add(github_deployment_repo, output_path)
+        units_commit_required = true
+      end
+    end
+
+    resolve_service_file(remaining_files, github_deployment_repo, source_dir, replacements, units_commit_required)
+  end
+
+  @spec resolve_service_file(List, term, String.t(), Map, term) :: term
+  defp resolve_service_file([], _, _, _, units_commit_required), do: units_commit_required  
+
   @doc """
   Method to run the templating engine against any service files in the repo. Returns true if any changes are made.
   """
   @spec checkin_pending_changes(DeploymentRepo, String.t()) :: :ok | {:error, String.t()}
   def checkin_pending_changes(repo, message) do
-    github = repo.github
-
-    case Github.commit(github, message) do
-      :ok -> Github.push(github)
+    case Github.commit(repo.github_deployment_repo, message) do
+      :ok -> Github.push(repo.github_deployment_repo)
       {:error, reason} -> {:error, reason}
     end
   end
@@ -391,61 +441,14 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   defp get_unit([], _, resolved_units) do
     resolved_units
   end
-
-  @doc false
-  # Method to resolve a Fleet service files.
-  #
-  ## Options
-  #
-  # The `[filename|remaining_files]` options defines the list of file names to review
-  #
-  # The `source_dir` options defines where the source files exist
-  #
-  # The `replacements` options defines which values should be replaced.
-  #
-  ## Return Values
-  #
-  # boolean; true if file was replaced and a commit add was performed)
-  #
-
-  @spec resolve_service_file(List, term, String.t(), Map, term) :: term
-  defp resolve_service_file([filename|remaining_files], github_deployment_repo, source_dir, replacements, units_commit_required) do
-    if String.ends_with?(filename, ".service.eex") do
-      template_path = "#{source_dir}/#{filename}"
-      output_path = "#{source_dir}/#{String.slice(filename, 0..-5)}"
-
-      Logger.info("Resolving service file #{output_path} from template #{template_path}...")
-      service_file = EEx.eval_file "#{source_dir}/#{filename}", replacements
-
-      file_is_identical = false
-      if File.exists?(output_path) do
-        existing_service_file = File.read!(output_path)
-        if (service_file == existing_service_file) do
-          file_is_identical = true
-        end
-      end
-
-      unless (file_is_identical) do
-        File.rm_rf(output_path)
-        File.write!(output_path, service_file)
-        Github.add(github_deployment_repo, output_path)
-        units_commit_required = true
-      end
-    end
-
-    resolve_service_file(remaining_files, github_deployment_repo, source_dir, replacements, units_commit_required)
-  end
-
-  @spec resolve_service_file(List, term, String.t(), Map, term) :: term
-  defp resolve_service_file([], _, _, _, units_commit_required), do: units_commit_required
-  
+ 
   @doc """
   Method to create a docker image from the Deployment repository and store it in a
   remote docker repository
 
   ## Options
 
-  The `repo` option defines deployment repo agent.
+  The `repo` option defines the repository
 
   ## Return values
 

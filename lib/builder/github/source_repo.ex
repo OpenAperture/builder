@@ -4,12 +4,21 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   alias OpenAperture.Builder.Workflow
   alias OpenAperture.Builder.Github
-  alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.GitHub.Repo, as: GithubRepo
 
   defstruct output_dir: nil,
             github_source_repo: nil
 
+  @type t :: %__MODULE__{}
+  
+  @moduledoc """
+  This module provides a data struct to represent a source repository. Initializing the struct
+  will download the contents of the repo and populate the struct with all available information
+  """
+
+  @doc """
+  Method to create a populated SourceRepo
+  """
   @spec create!(String.t, String.t, String.t) :: {:ok, SourceRepo} | {:error, term}
   def create!(workflow_id, source_repo_url, source_repo_git_ref) do
     output_dir = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/source_repos/#{workflow_id}"
@@ -18,15 +27,16 @@ defmodule OpenAperture.Builder.SourceRepo do
         output_dir: output_dir
       }
 
-      repo = %{repo | github_source_repo: download!(repo, source_repo_url, source_repo_git_ref)}
-
-      {:ok, repo}
+      %{repo | github_source_repo: download!(repo, source_repo_url, source_repo_git_ref)}
     rescue
       e in RuntimeError -> {:error, e.message}
     end
   end
 
-  @spec download!(SourceRepo, String.t, String.t) :: DeploymentRepo
+  @doc """
+  Method to download the repository locally
+  """
+  @spec download!(SourceRepo, String.t, String.t) :: SourceRepo
   def download!(repo, source_repo_url, source_repo_git_ref) do
     case download(repo, source_repo_url, source_repo_git_ref) do
       {:ok, repo} -> repo
@@ -79,47 +89,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   """
   @spec get_openaperture_info(pid) :: {:ok, pid} | {:error, String.t()}
   def get_openaperture_info(repo) do
-    repo_options = Agent.get(repo, fn options -> options end)
-    resolve_openaperture_info(repo_options[:output_dir])
-  end
-
-  @doc """
-  Method to determine the OpenAperture deployment repo from the source repo.
-     
-  ## Options
-   
-  The `repo` option defines the repo PID
-   
-  ## Return values
-   
-  tuple with {:ok, pid} or {:error, reason}
-  """
-  @spec get_deployment_repo(pid) :: {:ok, pid} | {:error, String.t()}
-  def get_deployment_repo(repo) do
-    repo_options = Agent.get(repo, fn options -> options end)
-    if (repo_options[:deployment_repo] != nil) do
-      repo_options[:deployment_repo]
-    else
-      openaperture_info = resolve_openaperture_info(repo_options[:output_dir])
-
-      if (openaperture_info != nil) do
-        docker_repo = openaperture_info["deployments"]["docker_repo"]
-        docker_repo_branch = openaperture_info["deployments"]["docker_repo_branch"]          
-        if (docker_repo != nil) do
-          #docker_repo_branch will default to master if not present
-          
-          #deployment_repo = DeploymentRepo.create(%{docker_repo: docker_repo, docker_repo_branch: docker_repo_branch})
-          #repo_options = Map.merge(repo_options, %{deployment_repo: deployment_repo})
-          #Agent.update(repo, fn _ -> repo_options end)
-          #deployment_repo          
-          nil
-        else
-          {:error, "openaperture.json is invalid! Make sure both the repo and default branch are specified"}
-        end
-      else
-        {:error, "source_dir.json is either missing or invalid!"}
-      end      
-    end    
+    resolve_openaperture_info(repo)
   end
 
   @doc false

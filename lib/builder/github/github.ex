@@ -1,23 +1,12 @@
+require Logger
 defmodule OpenAperture.Builder.GitHub do
+
+  alias OpenAperture.Builder.GitHub.Repo
+
   @moduledoc """
   This module contains functions used for interacting with a git repository,
   specifically in the context of one cloned from GitHub.
   """
-
-  require Logger
-  alias OpenAperture.Builder.GitHub.Repo
-
-  @doc """
-  Retrieves the base GitHub URL, including an OAuth credential if one is set
-  in the application's configuration.
-  """
-  @spec get_github_url :: String.t
-  def get_github_url() do
-    case Application.get_env(:github, :user_credentials) do
-      nil -> "https://github.com/"
-      creds -> "https://" <> creds <> "@github.com/"
-    end
-  end
 
   @doc """
   Clones a remote git repository to a local path.

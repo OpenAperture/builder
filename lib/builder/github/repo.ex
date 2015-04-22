@@ -1,4 +1,5 @@
 defmodule OpenAperture.Builder.GitHub.Repo do
+
   @moduledoc """
   This module represents a Git repository, and is used to track the local
   repository's path, the remote repository's URL, and the current
@@ -7,8 +8,6 @@ defmodule OpenAperture.Builder.GitHub.Repo do
   defstruct local_repo_path: nil, remote_url: nil, branch: nil
 
   @type t :: %__MODULE__{local_repo_path: String.t, remote_url: String.t, branch: String.t}
-
-  alias OpenAperture.Builder.GitHub
 
   @doc """
   Extracts the project name from a GitHub repo URL.
@@ -95,6 +94,18 @@ defmodule OpenAperture.Builder.GitHub.Repo do
   """
   @spec get_github_repo_url(String.t) :: String.t
   def get_github_repo_url(relative_repo) do
-    GitHub.get_github_url <> relative_repo <> ".git"
+    get_github_url <> relative_repo <> ".git"
   end
+
+  @doc """
+  Retrieves the base GitHub URL, including an OAuth credential if one is set
+  in the application's configuration.
+  """
+  @spec get_github_url :: String.t
+  def get_github_url() do
+    case Application.get_env(:github, :user_credentials) do
+      nil -> "https://github.com/"
+      creds -> "https://" <> creds <> "@github.com/"
+    end
+  end  
 end

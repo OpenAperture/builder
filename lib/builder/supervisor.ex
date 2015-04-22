@@ -8,7 +8,7 @@ defmodule OpenAperture.Builder.Supervisor do
   def init(:ok) do
     children = [
       worker(OpenAperture.Builder.Dispatcher, []),
-      #worker(OpenAperture.Builder.Build, [])
+      worker(OpenAperture.Builder.MessageManager, [])
     ]
 
     supervise(children, strategy: :one_for_one)
