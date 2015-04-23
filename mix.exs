@@ -12,8 +12,17 @@ defmodule OpenAperture.Builder.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger, :openaperture_messaging, :openaperture_manager_api, :openaperture_fleet, :openaperture_workflow_orchestrator_api],
-     mod: {OpenAperture.Builder, []}]
+    [
+      mod: {OpenAperture.Builder, []},
+      applications: [
+        :logger, 
+        :openaperture_messaging, 
+        :openaperture_manager_api, 
+        :openaperture_fleet, 
+        :openaperture_workflow_orchestrator_api,
+        :openaperture_overseer_api
+      ]
+    ]
   end
 
   # Dependencies can be Hex packages:
