@@ -1,7 +1,7 @@
 # OpenAperture.Builder
 
 [![Build Status](https://semaphoreci.com/api/v1/projects/f7e72642-032f-437e-b89d-401014147e5c/399299/badge.svg)](https://semaphoreci.com/perceptive/builder)
-
+ 
 The Builder module provides a standardized mechanism to execute build configurations and docker builds for Workflows that are orchestrated through the OpenAperture system.
 
 ## Module Responsibilities
