@@ -101,13 +101,16 @@ defmodule OpenAperture.Builder.Dispatcher do
   """
   @spec process_request(BuilderRequest.t) :: term
   def process_request(builder_request) do
+    Logger.debug("Creating DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
     case DeploymentRepo.init_from_request(builder_request.orchestrator_request) do
       {:error, reason} -> {:error, reason}
       {:ok, deployment_repo} -> 
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}
+          Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
           execute_milestone(:config, {:ok, builder_request})
         after
+          Logger.debug("Cleaning up DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
           DeploymentRepo.cleanup(deployment_repo)
         end
     end
@@ -127,6 +130,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   """
   @spec execute_milestone(term, {:error, String.t, BuilderRequest.t}) :: term
   def execute_milestone(_, {:error, reason, request}) do
+    Logger.debug("Executing :error milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
     Workflow.step_failed(request.orchestrator_request, "Milestone has failed", reason)
   end
 
@@ -143,6 +147,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   """
   @spec execute_milestone(:config, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:config, {:ok, request}) do
+    Logger.debug("Executing :config milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
     execute_milestone(:build, ConfigMilestone.execute(request))
   end
 
@@ -159,6 +164,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   """
   @spec execute_milestone(:build, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:build, {:ok, request}) do
+    Logger.debug("Executing :build milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
     execute_milestone(:completed, BuildMilestone.execute(request))
   end
 
@@ -171,6 +177,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   """
   @spec execute_milestone(:completed, {:ok, BuilderRequest.t}) :: term
   def execute_milestone(:completed, {:ok, request}) do
+    Logger.debug("Executing :completed milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
+
     #gather all of the required info from the BuilderRequest
     orchestrator_request = request.orchestrator_request
     orchestrator_request = %{orchestrator_request | etcd_token: request.deployment_repo.etcd_token}

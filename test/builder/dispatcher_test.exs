@@ -106,7 +106,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
     Dispatcher.execute_milestone(:completed, {:ok, request})
   after
@@ -119,7 +122,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(BuildMilestone, [:passthrough])
@@ -147,7 +153,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(BuildMilestone, [:passthrough])
@@ -167,7 +176,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(ConfigMilestone, [:passthrough])
@@ -199,7 +211,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(ConfigMilestone, [:passthrough])
@@ -219,7 +234,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(Workflow, [:passthrough])
@@ -235,7 +253,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(ConfigMilestone, [:passthrough])
@@ -277,7 +298,10 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc"
-    	}
+    	},
+      workflow: %Workflow{
+        id: "123"
+      }
     }
 
     :meck.new(Workflow, [:passthrough])
