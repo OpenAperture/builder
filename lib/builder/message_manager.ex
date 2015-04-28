@@ -50,7 +50,7 @@ defmodule OpenAperture.Builder.MessageManager do
         description: "Request:  #{delivery_tag}"
       }]
     end
-    Heartbeat.set_workload(workload)
+    #Heartbeat.set_workload(workload)
 
     Agent.update(__MODULE__, fn _ -> messages end)
 
@@ -79,7 +79,7 @@ defmodule OpenAperture.Builder.MessageManager do
         description: "Request:  #{delivery_tag}"
       }]
     end
-    Heartbeat.set_workload(workload)
+    #Heartbeat.set_workload(workload)
 
     Agent.update(__MODULE__, fn _ -> messages end)
     deleted_message
