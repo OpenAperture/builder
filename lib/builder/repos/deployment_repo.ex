@@ -5,6 +5,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.WorkflowOrchestratorApi.Request
   alias OpenAperture.Builder.Docker
+  alias OpenAperture.Builder.DockerHosts
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Fleet.EtcdCluster
 
@@ -218,39 +219,48 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   @spec populate_docker_repo(DeploymentRepo) :: {:ok, String.t()} | {:error, String.t()}
   defp populate_docker_repo(repo) do
-    dockerhub_repo = %Docker{
-      output_dir: repo.output_dir, 
-      docker_repo_url: repo.docker_repo_name,
-      docker_host: repo.docker_build_etcd_token,
-      registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
-      registry_username: Application.get_env(:openaperture_builder, :docker_registry_username),
-      registry_email: Application.get_env(:openaperture_builder, :docker_registry_email),
-      registry_password: Application.get_env(:openaperture_builder, :docker_registry_password)
-    }
-
-    docker_repo = if File.exists?("#{repo.output_dir}/docker.json") do
-      case JSON.decode(File.read!("#{repo.output_dir}/docker.json")) do
-        {:ok, json} -> 
-          case json["docker_registry_url"] do
-            nil -> dockerhub_repo
-            _   -> 
-              %Docker{
-                output_dir: repo.output_dir, 
-                docker_repo_url: repo.docker_repo_name,
-                docker_host: repo.docker_build_etcd_token,
-                registry_url: json["docker_registry_url"],
-                registry_username: json["docker_registry_username"],
-                registry_email: json["docker_registry_email"],
-                registry_password: json["docker_registry_password"]
-              }              
-          end
-        {:error, reason} -> dockerhub_repo
-      end
+    {result, docker_host_val} = DockerHosts.next_available(repo.docker_build_etcd_token)
+    if result == :error do
+      {:error, "Failed to resolve docker host for etcd cluster #{repo.docker_build_etcd_token}:  #{inspect docker_host_val}"}
     else
-      dockerhub_repo
-    end
+      dockerhub_repo = %Docker{
+        output_dir: repo.output_dir, 
+        docker_repo_url: repo.docker_repo_name,
+        docker_host: docker_host_val,
+        registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+        registry_username: Application.get_env(:openaperture_builder, :docker_registry_username),
+        registry_email: Application.get_env(:openaperture_builder, :docker_registry_email),
+        registry_password: Application.get_env(:openaperture_builder, :docker_registry_password)
+      }
 
-    Docker.init(docker_repo)
+      docker_repo = if File.exists?("#{repo.output_dir}/docker.json") do
+        case JSON.decode(File.read!("#{repo.output_dir}/docker.json")) do
+          {:ok, json} -> 
+            case json["docker_registry_url"] do
+              nil -> dockerhub_repo
+              _   -> 
+                %Docker{
+                  output_dir: repo.output_dir, 
+                  docker_repo_url: repo.docker_repo_name,
+                  docker_host: repo.docker_build_etcd_token,
+                  registry_url: json["docker_registry_url"],
+                  registry_username: json["docker_registry_username"],
+                  registry_email: json["docker_registry_email"],
+                  registry_password: json["docker_registry_password"]
+                }              
+            end
+          {:error, reason} -> dockerhub_repo
+        end
+      else
+        dockerhub_repo
+      end
+
+      Docker.init(docker_repo)
+    end
+  end
+
+  def resolve_docker_host(etcd_token) do
+
   end
 
   @spec update_file(String.t, String.t, List, GitRepo.t, term) :: term

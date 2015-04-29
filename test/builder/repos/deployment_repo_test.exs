@@ -4,6 +4,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Docker
+  alias OpenAperture.Builder.DockerHosts
   alias OpenAperture.Builder.Git
   alias OpenAperture.Builder.GitRepo, as: GitRepo
   alias OpenAperture.Builder.Request, as: BuilderRequest
@@ -74,6 +75,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
                                         pid
                                        end) 
 
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     payload = %{
       current_step: :build,
       deployable_units: nil,
@@ -119,6 +123,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.unload(Git)
     :meck.unload(GitRepo)
     :meck.unload(SourceRepo)
+    :meck.unload(DockerHosts)
   end
 
   test "init_from_request - no source_repo_git_ref", %{request: request} do
@@ -289,6 +294,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
                                         pid
                                        end)    
 
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     {:ok, repo} = DeploymentRepo.init_from_request(request)
     assert repo != nil
   after
@@ -296,6 +304,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.unload(GitRepo)
     :meck.unload(File)
     :meck.unload(SourceRepo)
+    :meck.unload(DockerHosts)
   end
 
   #========================
@@ -583,6 +592,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> false end)
 
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
     assert repo.output_dir != nil
@@ -594,6 +606,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     assert repo.registry_password != nil   
   after
     :meck.unload(File)
+    :meck.unload(DockerHosts)
   end
 
   test "populate_docker_repo! - file with no entry, default to dockerhub", %{deploy_repo: deploy_repo} do
@@ -603,6 +616,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
       docker_url: "user/repo",
     }) end)
 
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
     assert repo.output_dir != nil
@@ -614,6 +630,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     assert repo.registry_password != nil   
   after
     :meck.unload(File)
+    :meck.unload(DockerHosts)
   end
 
   test "populate_docker_repo! - invalid file, default to dockerhub", %{deploy_repo: deploy_repo} do
@@ -621,6 +638,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :exists?, fn _ -> true end)
     :meck.expect(File, :read!, fn _ -> "user/repo" end)
 
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)    
+
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
     assert repo.output_dir != nil
@@ -632,9 +652,13 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     assert repo.registry_password != nil   
   after
     :meck.unload(File)
+    :meck.unload(DockerHosts)
   end  
 
   test "populate_docker_repo! - valid file", %{deploy_repo: deploy_repo} do
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
     :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
@@ -655,9 +679,13 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     assert repo.registry_password != nil   
   after
     :meck.unload(File)
+    :meck.unload(DockerHosts)
   end  
 
   test "populate_docker_repo! - file missing data", %{deploy_repo: deploy_repo} do
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
     :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
@@ -670,7 +698,27 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   after
     :meck.unload(File)
-  end    
+    :meck.unload(DockerHosts)
+  end
+
+  test "populate_docker_repo! - docker host resolution fails", %{deploy_repo: deploy_repo} do
+    :meck.new(DockerHosts, [:passthrough])
+    :meck.expect(DockerHosts, :next_available, fn _ -> {:error, "bad news bears"} end)
+
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
+      docker_registry_url: "docker_registry_url",
+    }) end)
+
+    assert_raise RuntimeError,
+                 "Failed to resolve docker host for etcd cluster 123abc:  \"bad news bears\"",
+                 fn -> DeploymentRepo.populate_docker_repo!(deploy_repo) end
+
+  after
+    :meck.unload(File)
+    :meck.unload(DockerHosts)
+  end  
 
   #========================
   # resolve_dockerfile_template tests
