@@ -44,8 +44,8 @@ defmodule OpenAperture.Builder.DockerHosts do
           end
         end
 
-        if (host != nil && host["primaryIP"] != nil) do
-          {:ok, host["primaryIP"]}
+        if (host != nil && host.primaryIP != nil) do
+          {:ok, host.primaryIP}
         else
           {:error, "Host does not have a valid primaryIP:  #{inspect host}"}
         end
