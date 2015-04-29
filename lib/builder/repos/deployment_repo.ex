@@ -226,7 +226,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       dockerhub_repo = %Docker{
         output_dir: repo.output_dir, 
         docker_repo_url: repo.docker_repo_name,
-        docker_host: docker_host_val,
+        docker_host: "tcp://#{docker_host_val}:2375",
         registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
         registry_username: Application.get_env(:openaperture_builder, :docker_registry_username),
         registry_email: Application.get_env(:openaperture_builder, :docker_registry_email),
