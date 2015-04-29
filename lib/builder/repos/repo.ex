@@ -1,4 +1,4 @@
-defmodule OpenAperture.Builder.GitHub.Repo do
+defmodule OpenAperture.Builder.GitRepo do
 
   @moduledoc """
   This module represents a Git repository, and is used to track the local
@@ -14,7 +14,7 @@ defmodule OpenAperture.Builder.GitHub.Repo do
 
   ## Examples
 
-    iex> OpenAperture.Builder.GitHub.Repo.get_project_name("https://github.com/test_user/test_project")
+    iex> OpenAperture.Builder.GitRepo.get_project_name("https://github.com/test_user/test_project")
     "test_project"
   """
   @spec get_project_name(String.t) :: String.t
@@ -38,17 +38,17 @@ defmodule OpenAperture.Builder.GitHub.Repo do
 
   ## Examples
 
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("test_user/test_project")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("test_user/test_project")
     "https://github.com/test_user/test_project.git"
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("http://github.com/test_user/test_project")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("http://github.com/test_user/test_project")
     "https://github.com/test_user/test_project.git"
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("http://github.com/test_user/test_project.git")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("http://github.com/test_user/test_project.git")
     "https://github.com/test_user/test_project.git"    
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("https://github.com/test_user/test_project")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("https://github.com/test_user/test_project")
     "https://github.com/test_user/test_project.git"
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("https://github.com/test_user/test_project.git")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("https://github.com/test_user/test_project.git")
     "https://github.com/test_user/test_project.git"    
-    iex> OpenAperture.Builder.GitHub.Repo.resolve_github_repo_url("git@github.com:test_user/test_project.git")
+    iex> OpenAperture.Builder.GitRepo.resolve_github_repo_url("git@github.com:test_user/test_project.git")
     "git@github.com:test_user/test_project.git"        
   """
   @spec resolve_github_repo_url(String.t) :: String.t
@@ -90,7 +90,7 @@ defmodule OpenAperture.Builder.GitHub.Repo do
 
   ## Examples
 
-    iex> OpenAperture.Builder.GitHub.Repo.get_github_repo_url("test_user/test_project")
+    iex> OpenAperture.Builder.GitRepo.get_github_repo_url("test_user/test_project")
     "https://github.com/test_user/test_project.git"
   """
   @spec get_github_repo_url(String.t) :: String.t

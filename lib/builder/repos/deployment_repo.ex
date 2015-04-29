@@ -4,12 +4,12 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.WorkflowOrchestratorApi.Request
-  alias OpenAperture.Builder.Github
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Fleet.EtcdCluster
 
-  alias OpenAperture.Builder.GitHub.Repo, as: GithubRepo
+  alias OpenAperture.Builder.Git
+  alias OpenAperture.Builder.GitRepo, as: GitRepo
 
   defstruct output_dir: nil,
             github_deployment_repo: nil,
@@ -69,7 +69,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @doc """
   Method to download the repository locally
   """
-  @spec download!(DeploymentRepo, Workflow.t) :: GithubRepo.t
+  @spec download!(DeploymentRepo, Workflow.t) :: GitRepo.t
   def download!(repo, workflow) do
     case download(repo, workflow) do
       {:ok, repo} -> repo
@@ -77,10 +77,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
-  @doc """
-  Method to download the repository locally
-  """
-  @spec download(DeploymentRepo, Workflow.t) :: {:ok, GithubRepo} | {:error, String.t()}
+  @spec download(DeploymentRepo, Workflow.t) :: {:ok, GitRepo} | {:error, String.t()}
   defp download(repo, workflow) do
     if workflow.deployment_repo_git_ref == nil do
       deployment_repo_git_ref = "master"
@@ -88,15 +85,15 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       deployment_repo_git_ref = workflow.deployment_repo_git_ref
     end
  
-    github_repo = %GithubRepo{
+    github_repo = %GitRepo{
       local_repo_path: repo.output_dir, 
-      remote_url: GithubRepo.resolve_github_repo_url(workflow.deployment_repo), 
+      remote_url: GitRepo.resolve_github_repo_url(workflow.deployment_repo), 
       branch: deployment_repo_git_ref
     }
 
-    case Github.clone(github_repo) do
+    case Git.clone(github_repo) do
       :ok ->
-        case Github.checkout(github_repo) do
+        case Git.checkout(github_repo) do
           :ok -> {:ok, github_repo}
           {:error, reason} -> {:error, reason}
         end
@@ -256,7 +253,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     Docker.init(docker_repo)
   end
 
-  @spec update_file(String.t, String.t, List, GithubRepo.t, term) :: term
+  @spec update_file(String.t, String.t, List, GitRepo.t, term) :: term
   defp update_file(template_path, output_path, template_options, github_deployment_repo, type) do
     Logger.info("Resolving #{inspect type} from template #{template_path}...")
 
@@ -268,7 +265,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
           # The new version is different from the existing file, so we need to
           # replace the existing file's contents with the new contents.
           File.write!(output_path, new_version)
-          Github.add(github_deployment_repo, output_path)
+          Git.add(github_deployment_repo, output_path)
           true
         else
           # The template is the same as what's already there
@@ -278,7 +275,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       else
         Logger.info("#{inspect output_path} doesn't exist. Creating it with template contents.")
         File.write!(output_path, new_version)
-        Github.add(github_deployment_repo, output_path)
+        Git.add(github_deployment_repo, output_path)
         true
       end
     else
@@ -351,7 +348,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       unless (file_is_identical) do
         File.rm_rf(output_path)
         File.write!(output_path, service_file)
-        Github.add(github_deployment_repo, output_path)
+        Git.add(github_deployment_repo, output_path)
         units_commit_required = true
       end
     end
@@ -367,8 +364,8 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   """
   @spec checkin_pending_changes(DeploymentRepo, String.t()) :: :ok | {:error, String.t()}
   def checkin_pending_changes(repo, message) do
-    case Github.commit(repo.github_deployment_repo, message) do
-      :ok -> Github.push(repo.github_deployment_repo)
+    case Git.commit(repo.github_deployment_repo, message) do
+      :ok -> Git.push(repo.github_deployment_repo)
       {:error, reason} -> {:error, reason}
     end
   end

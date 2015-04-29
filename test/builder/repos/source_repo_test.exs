@@ -3,11 +3,11 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
 
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Github
-  alias OpenAperture.Builder.GitHub.Repo, as: GithubRepo
+  alias OpenAperture.Builder.GitRepo, as: GitRepo
 
 	setup do
  	  source_repo = %SourceRepo{ 
- 	    github_source_repo: %GithubRepo{}, 
+ 	    github_source_repo: %GitRepo{}, 
  	    output_dir: "/tmp"
 	  }
 
@@ -22,13 +22,13 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     :meck.expect(Github, :clone, fn _ -> :ok end)
     :meck.expect(Github, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     repo = SourceRepo.create!("123", "myorg/myrepo", "master")
     assert repo != nil
   after
-    :meck.unload(GithubRepo)
+    :meck.unload(GitRepo)
     :meck.unload(Github)    
   end  
 
@@ -40,13 +40,13 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     :meck.expect(Github, :clone, fn _ -> :ok end)
     :meck.expect(Github, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     repo = SourceRepo.download!(source_repo, "myorg/myrepo", "master")
     assert repo != nil
   after
-    :meck.unload(GithubRepo)
+    :meck.unload(GitRepo)
     :meck.unload(Github)    
   end    
 
@@ -55,14 +55,14 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     :meck.expect(Github, :clone, fn _ -> {:error, "bad news bears"} end)
     :meck.expect(Github, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     assert_raise RuntimeError,
                  "bad news bears",
                  fn -> SourceRepo.download!(source_repo, "myorg/myrepo", "master") end    
   after
-    :meck.unload(GithubRepo)
+    :meck.unload(GitRepo)
     :meck.unload(Github)
   end
 
@@ -71,14 +71,14 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     :meck.expect(Github, :clone, fn _ -> :ok end)
     :meck.expect(Github, :checkout, fn _ -> {:error, "bad news bears"} end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     assert_raise RuntimeError,
                  "bad news bears",
                  fn -> SourceRepo.download!(source_repo, "myorg/myrepo", "master") end    
   after
-    :meck.unload(GithubRepo)
+    :meck.unload(GitRepo)
     :meck.unload(Github)
   end  
 

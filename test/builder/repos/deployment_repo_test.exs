@@ -4,8 +4,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Docker
-  alias OpenAperture.Builder.Github
-  alias OpenAperture.Builder.GitHub.Repo, as: GithubRepo
+  alias OpenAperture.Builder.Git
+  alias OpenAperture.Builder.GitRepo, as: GitRepo
+  alias OpenAperture.Builder.Request, as: BuilderRequest
 
   alias OpenAperture.Fleet.ServiceFileParser
 
@@ -16,7 +17,8 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     deploy_repo = %DeploymentRepo{
       docker_repo_name: "testreponame",
       docker_build_etcd_token: "123abc",
-      output_dir: "/tmp"
+      output_dir: "/tmp",
+      github_deployment_repo: %GitRepo{}
     }
 
     workflow = %Workflow{}
@@ -35,6 +37,90 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   #========================
   # init_from_request tests
 
+  test "init_from_request - actual request" do
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
+
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
+
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn path -> 
+      cond do
+        String.ends_with?(path, "source.json") ->
+          Poison.encode!(%{
+            source_repo: "myorg/myrepo", 
+            source_repo_git_ref: "master"
+          }) 
+        String.ends_with?(path, "etcd.json") ->
+          Poison.encode!(%{
+            token: "123abc"
+          })         
+        String.ends_with?(path, "docker.json") ->
+          Poison.encode!(%{
+            docker_url: "testorg/testrepo"
+          })                   
+        true ->
+          ""
+      end
+    end)
+    :meck.expect(File, :ls!, fn _ -> [] end)
+
+    :meck.new(SourceRepo, [:passthrough])
+    :meck.expect(SourceRepo, :create!, fn _,_,_ ->
+                                        {:ok, pid} = Agent.start_link(fn -> %{} end)
+                                        pid
+                                       end) 
+
+    payload = %{
+      current_step: :build,
+      deployable_units: nil,
+      deployment_repo: "testorg/testrepo_docker",
+      deployment_repo_git_ref: "master",
+      docker_build_etcd_token: "123abc",
+      elapsed_step_time: nil,
+      elapsed_workflow_time: nil,
+      etcd_token: nil,
+      event_log: [
+          "[OpenAperture Workflow][aecc9150-000000000000] Starting workflow...",
+          "[OpenAperture Workflow][aecc9150-000000000000] Starting Workflow Milestone:  :build"
+      ],
+      force_build: nil,
+      id: "aecc9150--000000000000",
+      milestones: [
+          "build",
+          "deploy"
+      ],
+      notifications_broker_id: "1",
+      notifications_config: nil,
+      notifications_exchange_id: "1",
+      orchestration_queue_name: "workflow_orchestration",
+      source_commit_hash: nil,
+      source_repo: "testorg/testrepo",
+      source_repo_git_ref: "master",
+      workflow_completed: false,
+      workflow_duration: nil,
+      workflow_error: nil,
+      workflow_id: nil,
+      workflow_orchestration_broker_id: "1",
+      workflow_orchestration_exchange_id: "1",
+      workflow_step_durations: nil
+    }
+
+    builder_request = BuilderRequest.from_payload(payload)
+    builder_request = %{builder_request | delivery_tag: "delivery_tag"}
+
+    {:ok, repo} = DeploymentRepo.init_from_request(builder_request.orchestrator_request)
+    assert repo != nil
+  after
+    :meck.unload(File)
+    :meck.unload(Git)
+    :meck.unload(GitRepo)
+    :meck.unload(SourceRepo)
+  end
+
   test "init_from_request - no source_repo_git_ref", %{request: request} do
     assert DeploymentRepo.init_from_request(request) == {:error, "Missing source_repo_git_ref"}
   end
@@ -47,11 +133,11 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   end
 
   test "init_from_request - download failed", %{request: request} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> {:error, "bad news bears"} end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> {:error, "bad news bears"} end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
@@ -60,17 +146,17 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     {:error, message} = DeploymentRepo.init_from_request(request)
     assert message != nil
   after
-    :meck.unload(Github)
-    :meck.unload(GithubRepo)    
+    :meck.unload(Git)
+    :meck.unload(GitRepo)    
   end
 
   test "init_from_request - populate_source_repo failed", %{request: request} do 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
@@ -79,17 +165,17 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     {:error, message} = DeploymentRepo.init_from_request(request)
     assert message != nil
   after
-    :meck.unload(Github)
-    :meck.unload(GithubRepo)
+    :meck.unload(Git)
+    :meck.unload(GitRepo)
   end
 
   test "init_from_request - populate_etcd_token failed", %{request: request} do 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
@@ -111,19 +197,19 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     {:error, message} = DeploymentRepo.init_from_request(request)
     assert message != nil
   after
-    :meck.unload(Github)
-    :meck.unload(GithubRepo)
+    :meck.unload(Git)
+    :meck.unload(GitRepo)
     :meck.unload(File)
     :meck.unload(SourceRepo)
   end
 
   test "init_from_request - populate_docker_repo_name failed", %{request: request} do 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
@@ -156,19 +242,19 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     {:error, message} = DeploymentRepo.init_from_request(request)
     assert message != nil
   after
-    :meck.unload(Github)
-    :meck.unload(GithubRepo)
+    :meck.unload(Git)
+    :meck.unload(GitRepo)
     :meck.unload(File)
     :meck.unload(SourceRepo)
   end
 
   test "init_from_request - success", %{request: request} do 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
@@ -206,8 +292,8 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     {:ok, repo} = DeploymentRepo.init_from_request(request)
     assert repo != nil
   after
-    :meck.unload(Github)
-    :meck.unload(GithubRepo)
+    :meck.unload(Git)
+    :meck.unload(GitRepo)
     :meck.unload(File)
     :meck.unload(SourceRepo)
   end
@@ -338,50 +424,50 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   # download! tests
 
   test "download! - success", %{deploy_repo: deploy_repo, workflow: workflow} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     repo = DeploymentRepo.download!(deploy_repo, workflow)
     assert repo != nil
   after
-    :meck.unload(GithubRepo)
-    :meck.unload(Github)
+    :meck.unload(GitRepo)
+    :meck.unload(Git)
   end
 
   test "download! - clone fails", %{deploy_repo: deploy_repo, workflow: workflow} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> {:error, "bad news bears"} end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> {:error, "bad news bears"} end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     assert_raise RuntimeError,
                  "bad news bears",
                  fn -> DeploymentRepo.download!(deploy_repo, workflow) end    
   after
-    :meck.unload(GithubRepo)
-    :meck.unload(Github)
+    :meck.unload(GitRepo)
+    :meck.unload(Git)
   end
 
   test "download! - checkout fails", %{deploy_repo: deploy_repo, workflow: workflow} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> {:error, "bad news bears"} end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> {:error, "bad news bears"} end)
 
-    :meck.new(GithubRepo, [:passthrough])
-    :meck.expect(GithubRepo, :resolve_github_repo_url, fn _ -> "" end)
+    :meck.new(GitRepo, [:passthrough])
+    :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     assert_raise RuntimeError,
                  "bad news bears",
                  fn -> DeploymentRepo.download!(deploy_repo, workflow) end    
   after
-    :meck.unload(GithubRepo)
-    :meck.unload(Github)
+    :meck.unload(GitRepo)
+    :meck.unload(Git)
   end  
 
   #========================
@@ -604,13 +690,13 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "123abc" end)
     :meck.expect(File, :write!, fn _,_ -> :ok end)
 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :add, fn _,_ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :add, fn _,_ -> :ok end)
 
     assert DeploymentRepo.resolve_dockerfile_template(deploy_repo, []) == false
   after
     :meck.unload(File)
-    :meck.unload(Github)
+    :meck.unload(Git)
   end  
 
   #========================
@@ -641,45 +727,45 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "123abc" end)
     :meck.expect(File, :write!, fn _,_ -> :ok end)
 
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :add, fn _,_ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :add, fn _,_ -> :ok end)
 
     assert DeploymentRepo.resolve_service_file_templates(deploy_repo, []) == false
   after
     :meck.unload(File)
-    :meck.unload(Github)
+    :meck.unload(Git)
   end  
 
   #========================
   # checkin_pending_changes tests
 
   test "checkin_pending_changes - success", %{deploy_repo: deploy_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :commit, fn _,_ -> :ok end)
-    :meck.expect(Github, :push, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :commit, fn _,_ -> :ok end)
+    :meck.expect(Git, :push, fn _ -> :ok end)
 
     assert DeploymentRepo.checkin_pending_changes(deploy_repo, "test changes") == :ok
   after
-    :meck.unload(Github)
+    :meck.unload(Git)
   end  
 
   test "checkin_pending_changes - push fails", %{deploy_repo: deploy_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :commit, fn _,_ -> :ok end)
-    :meck.expect(Github, :push, fn _ -> {:error, "bad news bears"} end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :commit, fn _,_ -> :ok end)
+    :meck.expect(Git, :push, fn _ -> {:error, "bad news bears"} end)
 
     assert DeploymentRepo.checkin_pending_changes(deploy_repo, "test changes") == {:error, "bad news bears"}
   after
-    :meck.unload(Github)
+    :meck.unload(Git)
   end    
 
   test "checkin_pending_changes - commit fails", %{deploy_repo: deploy_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :commit, fn _,_ -> {:error, "bad news bears"} end)
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :commit, fn _,_ -> {:error, "bad news bears"} end)
 
     assert DeploymentRepo.checkin_pending_changes(deploy_repo, "test changes") == {:error, "bad news bears"}
   after
-    :meck.unload(Github)
+    :meck.unload(Git)
   end      
 
   #========================

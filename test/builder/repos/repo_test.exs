@@ -1,12 +1,12 @@
-defmodule OpenAperture.Builder.GitHub.Repo.Test do
+defmodule OpenAperture.Builder.GitRepo.Test do
   use ExUnit.Case
-  doctest OpenAperture.Builder.GitHub.Repo
+  doctest OpenAperture.Builder.GitRepo
 
-  import OpenAperture.Builder.GitHub.Repo
-  alias OpenAperture.Builder.GitHub.Repo
+  alias OpenAperture.Builder.GitRepo
+  import OpenAperture.Builder.GitRepo
 
   test "get_project_name from repo" do
-    repo = %Repo{
+    repo = %GitRepo{
       local_repo_path: "/tmp/some_random_path",
       remote_url: "https://github.com/test_org/test_project",
       branch: "master"

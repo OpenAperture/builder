@@ -4,7 +4,7 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   alias OpenAperture.Builder.Workflow
   alias OpenAperture.Builder.Github
-  alias OpenAperture.Builder.GitHub.Repo, as: GithubRepo
+  alias OpenAperture.Builder.GitRepo, as: GitRepo
 
   defstruct output_dir: nil,
             github_source_repo: nil
@@ -44,12 +44,12 @@ defmodule OpenAperture.Builder.SourceRepo do
     end
   end
 
-  @spec download(SourceRepo, String.t, String.t) :: {:ok, GithubRepo} | {:error, String.t()}
+  @spec download(SourceRepo, String.t, String.t) :: {:ok, GitRepo} | {:error, String.t()}
   defp download(repo, source_repo_url, source_repo_git_ref) do
     Logger.info "Downloading Source repo..."
-    github_repo = %GithubRepo{
+    github_repo = %GitRepo{
       local_repo_path: repo.output_dir, 
-      remote_url: GithubRepo.resolve_github_repo_url(source_repo_url), 
+      remote_url: GitRepo.resolve_github_repo_url(source_repo_url), 
       branch: source_repo_git_ref
     }
 

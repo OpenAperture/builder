@@ -1,7 +1,8 @@
 require Logger
-defmodule OpenAperture.Builder.GitHub do
 
-  alias OpenAperture.Builder.GitHub.Repo
+defmodule OpenAperture.Builder.Git do
+
+  alias OpenAperture.Builder.GitRepo, as: Repo
 
   @moduledoc """
   This module contains functions used for interacting with a git repository,
@@ -112,5 +113,5 @@ defmodule OpenAperture.Builder.GitHub do
         Logger.error(error_message)
         {:error, error_message}
     end
-  end
+  end	
 end

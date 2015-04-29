@@ -1,8 +1,8 @@
 defmodule OpenAperture.Builder.GithubTest do
   use ExUnit.Case
 
-  alias OpenAperture.Builder.GitHub.Repo
-  import OpenAperture.Builder.GitHub
+  alias OpenAperture.Builder.GitRepo, as: Repo
+  #import OpenAperture.Builder.GitHub
 
   setup do
     :meck.new System, [:unstick, :passthrough]
