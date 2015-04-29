@@ -10,7 +10,7 @@ config :openaperture_builder,
 	exchange_id: "1",
 	github_user_credentials: "user",
 	tmp_dir: "/tmp/openaperture",
-	docker_registry_url: "https://hub.docker.com",
+	docker_registry_url: "https://index.docker.io/v1/",
 	docker_registry_username: "user",
 	docker_registry_email: "user@test.com",
 	docker_registry_password: "pass"

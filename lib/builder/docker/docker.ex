@@ -388,7 +388,7 @@ defmodule OpenAperture.Builder.Docker do
     if docker.authenticated == true do
       :ok
     else
-      docker_cmd = "DOCKER_HOST=#{docker.docker_host} docker login #{docker.registry_url} -e=\"#{docker.registry_email}\" -u=\"#{docker.registry_username}\" -p=\"#{docker.registry_password}\""
+      docker_cmd = "DOCKER_HOST=#{docker.docker_host} docker login -e=\"#{docker.registry_email}\" -u=\"#{docker.registry_username}\" -p=\"#{docker.registry_password}\" #{docker.registry_url}"
       Logger.debug ("Executing Docker command:  #{docker_cmd}")
       case Util.execute_command(docker_cmd) do
         {_, 0} -> :ok
@@ -421,7 +421,7 @@ defmodule OpenAperture.Builder.Docker do
           File.rm_rf(stdout_file)
           File.rm_rf(stderr_file)
         end
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> {:error, reason, ""}
     end  
   end
 

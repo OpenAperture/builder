@@ -17,7 +17,7 @@ use Mix.Config
 
 config :openaperture_builder,
 	tmp_dir: System.get_env("BUILDER_TMPDIR") || "/tmp/openaperture",
-	docker_registry_url: System.get_env("DOCKER_REGISTRY_URL") || "https://hub.docker.com",
+	docker_registry_url: System.get_env("DOCKER_REGISTRY_URL") || "https://index.docker.io/v1/",
 	docker_registry_username: System.get_env("DOCKER_REGISTRY_USERNAME"),
 	docker_registry_email: System.get_env("DOCKER_REGISTRY_EMAIL"),
 	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD")
