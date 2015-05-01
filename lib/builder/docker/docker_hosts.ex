@@ -26,7 +26,7 @@ defmodule OpenAperture.Builder.DockerHosts do
     else
       Logger.debug("[DockerHosts] Retrieving next available docker host...")
 
-      hosts = EtcdCluster.get_hosts(EtcdCluster.create!(etcd_token))
+      hosts = EtcdCluster.get_hosts(etcd_token)
       if hosts == nil || length(hosts) == 0 do
         {:error, "Unable to find a valid docker host - No hosts are available!"}
       else

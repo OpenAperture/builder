@@ -7,7 +7,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.DockerHosts
   alias OpenAperture.Builder.SourceRepo
-  alias OpenAperture.Fleet.EtcdCluster
 
   alias OpenAperture.Builder.Git
   alias OpenAperture.Builder.GitRepo, as: GitRepo
@@ -412,18 +411,13 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   #
   @spec get_unit(List, String.t(), List) :: term
   defp get_unit([filename|remaining_files], source_dir, resolved_units) do
-    if String.ends_with?(filename, ".service") do
+    resolved_units = if String.ends_with?(filename, ".service") do
       output_path = "#{source_dir}/#{filename}"
-
       Logger.info("Resolving service file #{output_path}...")
-      unitOptions = OpenAperture.Fleet.ServiceFileParser.parse(output_path)
-      unit = %{
-        "name" => filename,
-        "options" => unitOptions
-      }
-      resolved_units = resolved_units ++ [unit]
+      resolved_units ++ [OpenAperture.Fleet.ServiceFileParser.parse_unit(filename, output_path)]
     else
       Logger.debug("#{filename} is not a service file")
+      resolved_units
     end
 
     get_unit(remaining_files, source_dir, resolved_units)

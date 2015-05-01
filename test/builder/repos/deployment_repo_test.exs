@@ -842,9 +842,16 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :ls, fn _ -> {:ok, ["my@.service"]} end)
 
     :meck.new(ServiceFileParser, [:passthrough])
-    :meck.expect(ServiceFileParser, :parse, fn _ -> %{} end)
+    :meck.expect(ServiceFileParser, :parse_unit, fn _,_ -> %OpenAperture.Fleet.SystemdUnit{name: "my@.service"} end)
 
-    assert DeploymentRepo.get_units(deploy_repo) == [%{"name" => "my@.service", "options" => %{}}]
+    returned_units = DeploymentRepo.get_units(deploy_repo) 
+    assert returned_units != nil
+    assert length(returned_units) == 1
+
+    returned_unit = List.first(returned_units)
+    assert returned_unit != nil
+    assert returned_unit.name == "my@.service"
+    assert returned_unit.options == nil
   after
     :meck.unload(File)
     :meck.unload(ServiceFileParser)
