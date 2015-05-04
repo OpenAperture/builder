@@ -103,7 +103,9 @@ defmodule OpenAperture.Builder.Dispatcher do
   def process_request(builder_request) do
     Logger.debug("Creating DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
     case DeploymentRepo.init_from_request(builder_request.orchestrator_request) do
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> 
+        Workflow.step_failed(builder_request.orchestrator_request, "Failed to create DeploymentRepo!", reason)
+        {:error, reason}
       {:ok, deployment_repo} -> 
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}

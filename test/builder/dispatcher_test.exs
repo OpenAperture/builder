@@ -305,11 +305,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     }
 
     :meck.new(Workflow, [:passthrough])
-    :meck.expect(Workflow, :step_completed, fn orchestrator_request -> 
-    	assert orchestrator_request.etcd_token == "123abc"
-    	assert orchestrator_request.deployable_units == []
-    	:ok
-    end)
+    :meck.expect(Workflow, :step_failed, fn _,_,_ -> :ok end)
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
