@@ -116,18 +116,24 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   defp populate_source_repo(repo, workflow) do
     case resolve_source_info(repo) do
       {:ok, source_info} ->
-        source_repo_option = source_info["source_repo"]
-
-        #if source_commit_hash was passed in, override what's in the source.json (if present)
-        source_repo_git_ref_option = if workflow.source_repo_git_ref != nil do
-          workflow.source_repo_git_ref
+        source_repo = if workflow.source_repo != nil && String.length(workflow.source_repo) > 0 do
+          workflow.source_repo
         else
-          source_info["source_repo_git_ref"]
+          source_info["source_repo"]
         end
 
-        case source_repo_option do
-          nil -> {:ok, nil}
-          _   -> {:ok, SourceRepo.create!(workflow.id, workflow.source_repo, source_repo_git_ref_option)}
+        #if source_commit_hash was passed in, override what's in the source.json (if present)
+        source_repo_git_ref_option = cond do
+          workflow.source_repo_git_ref != nil && String.length(workflow.source_repo_git_ref) > 0 -> workflow.source_repo_git_ref
+          source_info["source_repo_git_ref"] != nil && String.length(source_info["source_repo_git_ref"]) > 0 -> source_info["source_repo_git_ref"]
+          true -> "master"         
+        end
+
+        cond do
+          source_repo == nil || String.length(source_repo) == 0 ->
+            Logger.debug("No source repository has been defined")
+            {:ok, nil}            
+          true -> {:ok, SourceRepo.create!(workflow.id, source_repo, source_repo_git_ref_option)}
         end
       {:error, reason} -> {:error, reason}
     end
