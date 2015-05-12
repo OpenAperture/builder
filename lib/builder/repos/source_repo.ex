@@ -2,8 +2,9 @@ require Logger
 
 defmodule OpenAperture.Builder.SourceRepo do
 
+  alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Workflow
-  alias OpenAperture.Builder.Github
+  alias OpenAperture.Builder.Git
   alias OpenAperture.Builder.GitRepo, as: GitRepo
 
   defstruct output_dir: nil,
@@ -53,9 +54,9 @@ defmodule OpenAperture.Builder.SourceRepo do
       branch: source_repo_git_ref
     }
 
-    case Github.clone(github_repo) do
+    case Git.clone(github_repo) do
       :ok ->
-        case Github.checkout(github_repo) do
+        case Git.checkout(github_repo) do
           :ok -> {:ok, github_repo}
           {:error, reason} -> {:error, reason}
         end

@@ -2,7 +2,7 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
   use ExUnit.Case
 
   alias OpenAperture.Builder.SourceRepo
-  alias OpenAperture.Builder.Github
+  alias OpenAperture.Builder.Git
   alias OpenAperture.Builder.GitRepo, as: GitRepo
 
 	setup do
@@ -18,9 +18,9 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
 	# create! tests
 
   test "create!" do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough, :non_strict])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
     :meck.new(GitRepo, [:passthrough])
     :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
@@ -29,16 +29,16 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     assert repo != nil
   after
     :meck.unload(GitRepo)
-    :meck.unload(Github)    
+    :meck.unload(Git)    
   end  
 
 	#=============================
 	# download! tests
 
   test "download! - success", %{source_repo: source_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough, :non_strict])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
     :meck.new(GitRepo, [:passthrough])
     :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
@@ -47,13 +47,13 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
     assert repo != nil
   after
     :meck.unload(GitRepo)
-    :meck.unload(Github)    
+    :meck.unload(Git)    
   end    
 
   test "download! - clone fails", %{source_repo: source_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> {:error, "bad news bears"} end)
-    :meck.expect(Github, :checkout, fn _ -> :ok end)
+    :meck.new(Git, [:passthrough, :non_strict])
+    :meck.expect(Git, :clone, fn _ -> {:error, "bad news bears"} end)
+    :meck.expect(Git, :checkout, fn _ -> :ok end)
 
     :meck.new(GitRepo, [:passthrough])
     :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
@@ -63,13 +63,13 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
                  fn -> SourceRepo.download!(source_repo, "myorg/myrepo", "master") end    
   after
     :meck.unload(GitRepo)
-    :meck.unload(Github)
+    :meck.unload(Git)
   end
 
   test "download! - checkout fails", %{source_repo: source_repo} do
-    :meck.new(Github, [:passthrough, :non_strict])
-    :meck.expect(Github, :clone, fn _ -> :ok end)
-    :meck.expect(Github, :checkout, fn _ -> {:error, "bad news bears"} end)
+    :meck.new(Git, [:passthrough, :non_strict])
+    :meck.expect(Git, :clone, fn _ -> :ok end)
+    :meck.expect(Git, :checkout, fn _ -> {:error, "bad news bears"} end)
 
     :meck.new(GitRepo, [:passthrough])
     :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
@@ -79,7 +79,7 @@ defmodule OpenAperture.Builder.SourceRepo.Test do
                  fn -> SourceRepo.download!(source_repo, "myorg/myrepo", "master") end    
   after
     :meck.unload(GitRepo)
-    :meck.unload(Github)
+    :meck.unload(Git)
   end  
 
   #========================

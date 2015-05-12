@@ -70,22 +70,26 @@ defmodule OpenAperture.Builder.Dispatcher do
 
     options = OpenAperture.Messaging.ConnectionOptionsResolver.get_for_broker(ManagerApi.get_api, Configuration.get_current_broker_id)
     subscribe(options, workflow_orchestration_queue, fn(payload, _meta, %{delivery_tag: delivery_tag} = async_info) -> 
+      MessageManager.track(async_info)
+
+      builder_request = BuilderRequest.from_payload(payload)
+      builder_request = %{builder_request | delivery_tag: delivery_tag}
+
       try do
         Logger.debug("Starting to process request #{delivery_tag} (workflow #{payload[:id]})")
-        MessageManager.track(async_info)
-
-        builder_request = BuilderRequest.from_payload(payload)
-        builder_request = %{builder_request | delivery_tag: delivery_tag}
         process_request(builder_request)
       catch
         :exit, code   -> 
           Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Exited with code #{inspect code}.  Payload:  #{inspect payload}")
+          Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Exited with code #{inspect code}")
           acknowledge(delivery_tag)
         :throw, value -> 
           Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Throw called with #{inspect value}.  Payload:  #{inspect payload}")
+          Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Throw called with #{inspect value}")
           acknowledge(delivery_tag)
         what, value   -> 
           Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Caught #{inspect what} with #{inspect value}.  Payload:  #{inspect payload}")
+          Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
           acknowledge(delivery_tag)
       end      
     end)
