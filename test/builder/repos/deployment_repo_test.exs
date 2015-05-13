@@ -865,7 +865,9 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(Docker, :build, fn _ -> {:error, "bad news bears"} end)
 
     deploy_repo = %{deploy_repo | force_build: true}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == {:error, "bad news bears"}
+    {:error, reason, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert reason == "bad news bears"
+    assert length(status_messages) > 0
   after
     :meck.unload(Docker)
   end  
@@ -873,10 +875,12 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "create_docker_image - force build produces bad image", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
     :meck.expect(Docker, :build, fn _ -> {:ok, ""} end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: true}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == {:error, "Docker build failed to produce a valid image!"}
+    {:error, reason, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert reason == "Docker build failed to produce a valid image!"
+    assert length(status_messages) > 0    
   after
     :meck.unload(Docker)
   end
@@ -885,10 +889,12 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.new(Docker, [:passthrough])
     :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:error, "bad news bears"} end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: true}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == {:error, "bad news bears"}
+    {:error, reason, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert reason == "bad news bears"
+    assert length(status_messages) > 0
   after
     :meck.unload(Docker)
   end
@@ -898,10 +904,16 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:error, "bad news bears"} end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: true}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == {:error, "bad news bears"}
+    deploy_repo = %{deploy_repo | docker_repo: %Docker{
+        registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+      }
+    }    
+    {:error, reason, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert reason == "bad news bears"
+    assert length(status_messages) > 0
   after
     :meck.unload(Docker)
   end
@@ -911,10 +923,15 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:ok, "123"} end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: true}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == :ok
+    deploy_repo = %{deploy_repo | docker_repo: %Docker{
+        registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+      }
+    }    
+    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert length(status_messages) > 0
   after
     :meck.unload(Docker)
   end  
@@ -925,10 +942,16 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:ok, "123"} end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: false}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == :ok
+    deploy_repo = %{deploy_repo | docker_repo: %Docker{
+        registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+      }
+    }
+
+    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert length(status_messages) > 0
   after
     :meck.unload(Docker)
   end  
@@ -936,10 +959,11 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "create_docker_image - build cache success", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
     :meck.expect(Docker, :pull, fn _,_ -> :ok end)
-    :meck.expect(Docker, :cleanup_image_cache, fn _ -> :ok end)
+    :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: false}
-    assert DeploymentRepo.create_docker_image(deploy_repo, ["tag"]) == :ok
+    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    assert length(status_messages) > 0    
   after
     :meck.unload(Docker)
   end  

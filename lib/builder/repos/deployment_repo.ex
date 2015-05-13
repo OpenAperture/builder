@@ -459,48 +459,59 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   ## Return values
 
-  :ok or {:error, reason}
+  {:ok, status_messages} or {:error, reason, status_messages}
   """
-  @spec create_docker_image(DeploymentRepo, List) :: :ok | {:error, String.t()}
-  def create_docker_image(repo, tags) do
+  @spec create_docker_image(DeploymentRepo, String.t()) :: {:ok, List} | {:error, String.t(), List}
+  def create_docker_image(repo, tag) do
+    status_messages = []
     # attempt to do a docker pull to determine if image already exists (unless force_build is true)
     # Unfortunately it's not possible to browse or search private repos (https://docs.docker.com/docker-hub/repos/#private-repositories),
     # so a pull the only option available
     if repo.force_build == true do
       requires_build = true
+      status_messages = status_messages ++ ["The force_build flag has been set, requesting docker build"]
     else
-      requires_build = case Docker.pull(repo.docker_repo, repo.docker_repo_name) do
-        :ok -> false
-        {:error, error_msg} -> true
+      requires_build = case Docker.pull(repo.docker_repo, tag) do
+        :ok -> 
+          status_messages = status_messages ++ ["The docker image #{tag} already exists, skipping docker build"]
+          false
+        {:error, error_msg} -> 
+          status_messages = status_messages ++ ["The docker image #{tag} does not exist, requesting docker build"]
+          true
       end
     end
 
     if requires_build do
+      status_messages = status_messages ++ ["Executing a docker build for #{tag}..."]
       case Docker.build(repo.docker_repo) do
         {:ok, image_id} ->
           try do
             if (image_id != nil && String.length(image_id) > 0) do
-              case Docker.tag(repo.docker_repo, image_id, tags) do
+              status_messages = status_messages ++ ["Successfully created image #{image_id}, tagging image #{image_id}..."]
+              case Docker.tag(repo.docker_repo, image_id, [tag]) do
                 {:ok, _} ->
+                  status_messages = status_messages ++ ["Successfully tagging image #{image_id}, pushing to docker registry #{repo.docker_repo.registry_url}..."]
                   case Docker.push(repo.docker_repo) do
-                    {:ok, _} -> :ok
-                    {:error, reason} -> {:error, reason}
+                    {:ok, _} -> 
+                      status_messages = status_messages ++ ["Successfully pushed image #{image_id}"]
+                      {:ok, status_messages}
+                    {:error, reason} -> {:error, reason, status_messages}
                   end
-                {:error, reason} -> {:error, reason}
+                {:error, reason} -> {:error, reason, status_messages}
               end
             else
-              {:error,"Docker build failed to produce a valid image!"}
+              {:error,"Docker build failed to produce a valid image!", status_messages}
             end
           after
             Docker.cleanup_image_cache(repo.docker_repo, image_id)              
           end
         {:error, reason} -> 
           Docker.cleanup_image_cache(repo.docker_repo, repo.docker_repo_name)
-          {:error,reason}
+          {:error,reason, status_messages}
       end      
     else
       Docker.cleanup_image_cache(repo.docker_repo, repo.docker_repo_name)
-      :ok
+      {:ok, status_messages}
     end
   end
 end

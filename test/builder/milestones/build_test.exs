@@ -18,11 +18,15 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     }
 
     :meck.new(DeploymentRepo, [:passthrough])
-    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> :ok end)
+    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:ok, ["Status", "Status"]} end)
+
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)
 
     assert Build.execute(request) == {:ok, request}
   after
   	:meck.unload(DeploymentRepo)
+    :meck.unload(BuilderRequest)
   end
 
   test "execute - failure" do
@@ -35,11 +39,15 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     }
 
     :meck.new(DeploymentRepo, [:passthrough])
-    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:error, "bad news bears"} end)
+    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:error, "bad news bears", ["Status", "Status"]} end)
+
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)    
 
     {:error, _, returned_request} = Build.execute(request)
     assert returned_request == request
   after
   	:meck.unload(DeploymentRepo)
+    :meck.unload(BuilderRequest)
   end  
 end
