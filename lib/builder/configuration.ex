@@ -35,6 +35,20 @@ defmodule OpenAperture.Builder.Configuration do
     get_config("BROKER_ID", :openaperture_builder, :broker_id)
   end
 
+  @doc """
+  Method to retrieve the currently assigned queue name (for "builder")
+   
+  ## Options
+   
+  ## Return values
+
+  The exchange identifier
+  """ 
+  @spec get_current_queue_name() :: String.t()
+  def get_current_queue_name do
+    get_config("QUEUE_NAME", :openaperture_overseer, :queue_name)
+  end  
+
   @doc false
   # Method to retrieve a configuration option from the environment or config settings
   # 
