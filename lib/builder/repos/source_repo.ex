@@ -3,7 +3,6 @@ require Logger
 defmodule OpenAperture.Builder.SourceRepo do
 
   alias OpenAperture.Builder.SourceRepo
-  alias OpenAperture.Builder.Workflow
   alias OpenAperture.Builder.Git
   alias OpenAperture.Builder.GitRepo, as: GitRepo
 

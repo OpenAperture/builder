@@ -254,7 +254,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
                   registry_password: json["docker_registry_password"]
                 }              
             end
-          {:error, reason} -> dockerhub_repo
+          {:error, _reason} -> dockerhub_repo
         end
       else
         dockerhub_repo
@@ -264,7 +264,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
-  def resolve_docker_host(etcd_token) do
+  def resolve_docker_host(_etcd_token) do
 
   end
 
@@ -475,7 +475,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
         :ok -> 
           status_messages = status_messages ++ ["The docker image #{tag} already exists, skipping docker build"]
           false
-        {:error, error_msg} -> 
+        {:error, _error_msg} -> 
           status_messages = status_messages ++ ["The docker image #{tag} does not exist, requesting docker build"]
           true
       end
