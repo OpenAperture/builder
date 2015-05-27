@@ -5,7 +5,6 @@ defmodule OpenAperture.Builder.Milestones.Config do
   use Timex
   
   alias OpenAperture.Builder.Request, as: BuilderRequest
-  alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.SourceRepo
 
@@ -28,7 +27,7 @@ defmodule OpenAperture.Builder.Milestones.Config do
   def execute(builder_request) do
     #load any custom hipchat room notifications
     builder_request = unless builder_request.deployment_repo.source_repo == nil do
-      info = case SourceRepo.get_openaperture_info(builder_request.deployment_repo.source_repo) do
+      case SourceRepo.get_openaperture_info(builder_request.deployment_repo.source_repo) do
         nil -> builder_request
         info -> BuilderRequest.set_notifications_config(builder_request, info["deployments"]["notifications"])
       end
@@ -42,7 +41,7 @@ defmodule OpenAperture.Builder.Milestones.Config do
     units_commit_required = DeploymentRepo.resolve_service_file_templates(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp, dst_port: "<%= dst_port %>"])
 
     if (dockerfile_commit_required || units_commit_required) do
-      commit_result = case DeploymentRepo.checkin_pending_changes(builder_request.deployment_repo, "Deployment for commit #{builder_request.workflow.source_repo_git_ref}") do
+      case DeploymentRepo.checkin_pending_changes(builder_request.deployment_repo, "Deployment for commit #{builder_request.workflow.source_repo_git_ref}") do
         :ok -> {:ok, builder_request}
         {:error, reason} -> {:error, "Failed to commit changes:  #{inspect reason}", builder_request}
       end
