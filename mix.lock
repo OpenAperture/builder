@@ -1,5 +1,6 @@
 %{"amqp": {:hex, :amqp, "0.1.1"},
   "amqp_client": {:hex, :amqp_client, "3.5.0"},
+  "earmark": {:git, "git://github.com/pragdave/earmark.git", "f078149976c6b408422bb0a6fe782f57b17afa3b", [tag: "v0.1.8"]},
   "ex_doc": {:git, "git://github.com/elixir-lang/ex_doc.git", "05d578569be0ef2d9231c881232ca53253bab7ca", []},
   "exactor": {:hex, :exactor, "2.1.2"},
   "exjsx": {:hex, :exjsx, "3.1.0"},
