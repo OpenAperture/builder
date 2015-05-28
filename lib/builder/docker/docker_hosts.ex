@@ -35,7 +35,7 @@ defmodule OpenAperture.Builder.DockerHosts do
           host = List.first(hosts)
         else
           host_idx = :random.uniform(cur_hosts_cnt)-1
-          {host, cur_idx} = Enum.reduce hosts, {nil, 0}, fn (current_host, {host, cur_idx}) ->
+          {host, _cur_idx} = Enum.reduce hosts, {nil, 0}, fn (current_host, {host, cur_idx}) ->
             if cur_idx == host_idx do
               {current_host, cur_idx+1}
             else
