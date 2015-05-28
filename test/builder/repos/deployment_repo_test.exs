@@ -1003,35 +1003,35 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   end  
 
   #========================
-  # populate_fleet_config tests
+  # get_fleet_config tests
 
-  test "populate_fleet_config(repo) file does not exist" do
+  test "get_fleet_config(repo) file does not exist" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> false end)
     
-    assert DeploymentRepo.populate_fleet_config!(%DeploymentRepo{}) == nil
+    assert DeploymentRepo.get_fleet_config!(%DeploymentRepo{}) == nil
   after
     :meck.unload(File)
   end
 
-  test "populate_fleet_config(repo) bad json" do
+  test "get_fleet_config(repo) bad json" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
     :meck.expect(File, :read!, fn _ -> "this is not json" end)
 
     assert_raise RuntimeError,
-                 "{:unexpected_token, \"this is not json\"}",
-                 fn -> %DeploymentRepo{} |> DeploymentRepo.populate_fleet_config! end
+                 "An error occurred parsing Fleet JSON!  {:unexpected_token, \"this is not json\"}",
+                 fn -> %DeploymentRepo{} |> DeploymentRepo.get_fleet_config! end
   after
     :meck.unload(File)
   end
 
-  test "populate_fleet_config(repo) success" do
+  test "get_fleet_config(repo) success" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
     :meck.expect(File, :read!, fn _ -> JSON.encode!(%{instance_cnt: 10}) end)
 
-    config = DeploymentRepo.populate_fleet_config!(%DeploymentRepo{})
+    config = DeploymentRepo.get_fleet_config!(%DeploymentRepo{})
     assert config["instance_cnt"] == 10
   after
     :meck.unload(File)

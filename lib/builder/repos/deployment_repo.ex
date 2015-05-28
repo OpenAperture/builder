@@ -177,7 +177,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
                           "" -> {:error, "invalid token in etcd.json"}
                           _ -> {:ok, json["token"]}
                        end
-        {:error, reason} -> {:error, "An error occurred parsing etcd JSON!  #{reason}"}
+        {:error, reason} -> {:error, "An error occurred parsing etcd JSON!  #{inspect reason}"}
       end
     else
       {:error, "No etcd JSON file is present in this repository!"}
@@ -187,23 +187,23 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @doc """
   Method to load any custom Fleet configuration
   """
-  @spec populate_fleet_config!(DeploymentRepo) :: String.t
-  def populate_fleet_config!(repo) do
-    case populate_fleet_config(repo) do
+  @spec get_fleet_config!(DeploymentRepo) :: String.t
+  def get_fleet_config!(repo) do
+    case get_fleet_config(repo) do
       {:ok, config} -> config
       {:error, reason} -> raise reason
     end
   end
 
-  @spec populate_fleet_config(DeploymentRepo) :: {:ok, String.t()} | {:error, term}
-  defp populate_fleet_config(repo) do
+  @spec get_fleet_config(DeploymentRepo) :: {:ok, String.t()} | {:error, term}
+  defp get_fleet_config(repo) do
     output_dir = repo.output_dir
     etcd_json = "#{output_dir}/fleet.json"
     if File.exists?(etcd_json) do
       Logger.info("Loading custom Fleet configuration...")
       case JSON.decode(File.read!(etcd_json)) do
         {:ok, json} -> {:ok, json}
-        {:error, reason} -> {:error, "An error occurred parsing etcd JSON!  #{reason}"}
+        {:error, reason} -> {:error, "An error occurred parsing Fleet JSON!  #{inspect reason}"}
       end
     else
       Logger.info("There is no custom Fleet configuration defined")
