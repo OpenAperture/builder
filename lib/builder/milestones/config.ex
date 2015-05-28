@@ -36,7 +36,7 @@ defmodule OpenAperture.Builder.Milestones.Config do
     end
 
     #load any custom fleet config
-    builder_request BuilderRequest.set_fleet_config(builder_request, DeploymentRepo.get_fleet_config!(builder_request.deployment_repo))
+    builder_request = BuilderRequest.set_fleet_config(builder_request, DeploymentRepo.get_fleet_config!(builder_request.deployment_repo))
     
   	builder_request = BuilderRequest.publish_success_notification(builder_request, "Requesting configuration of repository #{builder_request.workflow.deployment_repo}...")
 
