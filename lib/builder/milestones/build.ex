@@ -9,16 +9,51 @@ defmodule OpenAperture.Builder.Milestones.Build do
   This module contains the logic for the "Build" Workflow milestone
   """  
 
-  @doc """
-  Method to process an incoming Builder request
-
-  ## Options
-
-  The `request` option defines the BuilderRequest
-
+  @doc """
+  Method to wrap the execute call in a check that kills the docker build if the workflow is manually killed
+  Agent contains boolean indicating if "execute_internal" has
+  
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
+    {:ok, agent_pid} = Agent.start_link(fn -> false end)
+    {:ok, task_pid} = Task.async(fn -> 
+        tmp = execute_internal(request)
+        Agent.update(agent_pid, fn _ -> true end)
+        tmp
+      end)
+    monitor_build(agent_pid, task_pid, request)
+  end
+
+  @spec monitor_build(pid, pid, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  defp monitor_build(agent_pid, task_pid, request) do
+    :timer.sleep(10000)
+    case Agent.get(agent_pid) do
+      true  -> Task.await(task_pid, 5000)
+      false ->
+        case workflow_error?(request) do
+          false -> monitor_build(agent_pid, task_pid, request)
+          true  ->
+            case Agent.get(agent_pid) do
+              true  -> Task.await(task_pid, 5000)
+              false -> 
+                Process.exit(task_pid, :kill)
+                {:error, "Workflow is in error state", request}
+            end
+        end
+    end
+  end
+
+  @spec workflow_error?(BuilderRequest.t) :: true | false
+  defp workflow_error?(request) do
+    case OpenAperture.ManagerApi.Workflow.get_workflow(request.workflow.id).body.workflow_error do
+      true -> true
+      _ -> false
+    end
+  end
+
+  @spec execute_internal(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  defp execute_internal(request) do
     Logger.info ("Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}...")    
     case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
       {:ok, status_messages} -> 
