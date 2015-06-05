@@ -20,8 +20,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
     IO.inspect request
     {:ok, agent_pid} = Agent.start_link(fn -> request end)
     task = Task.async(fn ->
-        IO.puts "Agent Pid: #{inspect agent_pid}"
-        req = Agent.get(agent_pid)
+        req = Agent.get(agent_pid, &(&1))
         IO.puts "request inside task:"
         IO.inspect req
         tmp = execute_internal(req)
@@ -34,13 +33,13 @@ defmodule OpenAperture.Builder.Milestones.Build do
   @spec monitor_build(pid, pid, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   defp monitor_build(agent_pid, task_pid, request) do
     :timer.sleep(10000)
-    case Agent.get(agent_pid) do
+    case Agent.get(agent_pid, &(&1)) do
       :completed  -> Task.await(task_pid, 5000)
       _ ->
         case workflow_error?(request) do
           false -> monitor_build(agent_pid, task_pid, request)
           true  ->
-            case Agent.get(agent_pid) do
+            case Agent.get(agent_pid, &(&1)) do
               :completed  -> Task.await(task_pid, 5000)
               _ ->
                 Process.exit(task_pid, :kill)
