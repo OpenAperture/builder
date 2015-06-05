@@ -11,19 +11,20 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   @doc """
   Method to wrap the execute call in a check that kills the docker build if the workflow is manually killed
-  Agent contains boolean indicating if "execute_internal" has
+  Agent contains the request and then :completed when the request completes
   
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
     IO.puts "request outside task:"
     IO.inspect request
-    {:ok, agent_pid} = Agent.start_link(fn -> false end)
+    {:ok, agent_pid} = Agent.start_link(fn -> request end)
     {:ok, task_pid} = Task.async(fn -> 
+        req = Agent.get(agent_pid)
         IO.puts "request inside task:"
-        IO.inspect request
-        tmp = execute_internal(request)
-        Agent.update(agent_pid, fn _ -> true end)
+        IO.inspect req
+        tmp = execute_internal(req)
+        Agent.update(agent_pid, fn _ -> :completed end)
         tmp
       end)
     monitor_build(agent_pid, task_pid, request)
@@ -33,14 +34,14 @@ defmodule OpenAperture.Builder.Milestones.Build do
   defp monitor_build(agent_pid, task_pid, request) do
     :timer.sleep(10000)
     case Agent.get(agent_pid) do
-      true  -> Task.await(task_pid, 5000)
-      false ->
+      :completed  -> Task.await(task_pid, 5000)
+      _ ->
         case workflow_error?(request) do
           false -> monitor_build(agent_pid, task_pid, request)
           true  ->
             case Agent.get(agent_pid) do
-              true  -> Task.await(task_pid, 5000)
-              false -> 
+              :completed  -> Task.await(task_pid, 5000)
+              _ ->
                 Process.exit(task_pid, :kill)
                 {:error, "Workflow is in error state", request}
             end
