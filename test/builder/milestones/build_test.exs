@@ -16,17 +16,26 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     		etcd_token: "123abc"
     	}
     }
+    
+    response = %{body: JSON.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
-    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:ok, ["Status", "Status"]} end)
+    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> 
+                                                          :timer.sleep(2_000)
+                                                          {:ok, ["Status", "Status"]} end)
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)
+
+    :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
+    :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)    
+
 
     assert Build.execute(request) == {:ok, request}
   after
   	:meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
+    :meck.unload(OpenAperture.ManagerApi.Workflow)
   end
 
   test "execute - failure" do
@@ -37,18 +46,23 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
         etcd_token: "123abc"
       }
     }
+    response = %{body: JSON.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:error, "bad news bears", ["Status", "Status"]} end)
 
     :meck.new(BuilderRequest, [:passthrough])
-    :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)    
+    :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)
+
+    :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
+    :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)
 
     {:error, _, returned_request} = Build.execute(request)
     assert returned_request == request
   after
     :meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
+    :meck.unload(OpenAperture.ManagerApi.Workflow)
   end  
 
   test "execute - workflow killed" do
@@ -63,7 +77,7 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     response = %{body: JSON.decode!("{\"workflow_error\":true,\"workflow_completed\":true}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
-    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> :timer.sleep(30000) end)
+    :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> :timer.sleep(100_000) end)
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)    
@@ -77,5 +91,6 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
   after
     :meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
+    :meck.unload(OpenAperture.ManagerApi.Workflow)
   end  
 end

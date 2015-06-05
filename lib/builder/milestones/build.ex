@@ -23,17 +23,22 @@ defmodule OpenAperture.Builder.Milestones.Build do
         Agent.update(agent_pid, fn _ -> :completed end)
         tmp
       end)
-    monitor_build(agent_pid, task, request)
+    return = monitor_build(agent_pid, task, request, true)
+    Agent.stop(agent_pid)
+    return
   end
 
-  @spec monitor_build(pid, Task.t, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
-  defp monitor_build(agent_pid, task, request) do
-    :timer.sleep(10000)
+  @spec monitor_build(pid, Task.t, BuilderRequest.t, boolean) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  defp monitor_build(agent_pid, task, request, first) do
+    case first do
+      true -> :timer.sleep(1_000) #short circuit for testing
+      false ->:timer.sleep(10_000)
+    end
     case Agent.get(agent_pid, &(&1)) do
       :completed  -> Task.await(task, 5000)
       _ ->
         case workflow_error?(request) do
-          false -> monitor_build(agent_pid, task, request)
+          false -> monitor_build(agent_pid, task, request, false)
           true  ->
             case Agent.get(agent_pid, &(&1)) do
               :completed  -> Task.await(task, 5000)
