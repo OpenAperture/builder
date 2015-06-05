@@ -16,8 +16,12 @@ defmodule OpenAperture.Builder.Milestones.Build do
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
+    IO.puts "request outside task:"
+    IO.inspect request
     {:ok, agent_pid} = Agent.start_link(fn -> false end)
     {:ok, task_pid} = Task.async(fn -> 
+        IO.puts "request inside task:"
+        IO.inspect request
         tmp = execute_internal(request)
         Agent.update(agent_pid, fn _ -> true end)
         tmp
