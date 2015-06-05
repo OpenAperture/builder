@@ -19,7 +19,8 @@ defmodule OpenAperture.Builder.Milestones.Build do
     IO.puts "request outside task:"
     IO.inspect request
     {:ok, agent_pid} = Agent.start_link(fn -> request end)
-    {:ok, task_pid} = Task.async(fn -> 
+    {:ok, task_pid} = Task.async(fn ->
+        IO.puts "Agent Pid: #{inspect agent_pid}"
         req = Agent.get(agent_pid)
         IO.puts "request inside task:"
         IO.inspect req
