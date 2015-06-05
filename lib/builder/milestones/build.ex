@@ -27,22 +27,22 @@ defmodule OpenAperture.Builder.Milestones.Build do
         Agent.update(agent_pid, fn _ -> :completed end)
         tmp
       end)
-    monitor_build(agent_pid, task.pid, request)
+    monitor_build(agent_pid, task, request)
   end
 
-  @spec monitor_build(pid, pid, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
-  defp monitor_build(agent_pid, task_pid, request) do
+  @spec monitor_build(pid, Task.t, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  defp monitor_build(agent_pid, task, request) do
     :timer.sleep(10000)
     case Agent.get(agent_pid, &(&1)) do
-      :completed  -> Task.await(task_pid, 5000)
+      :completed  -> Task.await(task, 5000)
       _ ->
         case workflow_error?(request) do
-          false -> monitor_build(agent_pid, task_pid, request)
+          false -> monitor_build(agent_pid, task, request)
           true  ->
             case Agent.get(agent_pid, &(&1)) do
-              :completed  -> Task.await(task_pid, 5000)
+              :completed  -> Task.await(task, 5000)
               _ ->
-                Process.exit(task_pid, :kill)
+                Process.exit(task.pid, :kill)
                 {:error, "Workflow is in error state", request}
             end
         end
