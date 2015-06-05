@@ -9,10 +9,10 @@ defmodule OpenAperture.Builder.Milestones.Build do
   This module contains the logic for the "Build" Workflow milestone
   """  
 
-  @doc """
+  @doc """
   Method to wrap the execute call in a check that kills the docker build if the workflow is manually killed
   Agent contains boolean indicating if "execute_internal" has
-  
+  
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
