@@ -16,13 +16,9 @@ defmodule OpenAperture.Builder.Milestones.Build do
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
-    IO.puts "request outside task:"
-    IO.inspect request
     {:ok, agent_pid} = Agent.start_link(fn -> request end)
     task = Task.async(fn ->
         req = Agent.get(agent_pid, &(&1))
-        IO.puts "request inside task:"
-        IO.inspect req
         tmp = execute_internal(req)
         Agent.update(agent_pid, fn _ -> :completed end)
         tmp
@@ -42,6 +38,8 @@ defmodule OpenAperture.Builder.Milestones.Build do
             case Agent.get(agent_pid, &(&1)) do
               :completed  -> Task.await(task, 5000)
               _ ->
+                Process.demonitor(task.ref)
+                Process.unlink(task.pid)
                 Process.exit(task.pid, :kill)
                 {:error, "Workflow is in error state", request}
             end
@@ -51,7 +49,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   @spec workflow_error?(BuilderRequest.t) :: true | false
   defp workflow_error?(request) do
-    case OpenAperture.ManagerApi.Workflow.get_workflow(request.workflow.id).body.workflow_error do
+    case OpenAperture.ManagerApi.Workflow.get_workflow(request.workflow.id).body["workflow_error"] do
       true -> true
       _ -> false
     end
