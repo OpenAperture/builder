@@ -60,7 +60,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
     :meck.new(System, [:unstick])
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash" || "cmd.exe"
+      assert command == "/bin/bash"
       assert String.contains?(Enum.at(args, 1), "docker build --force-rm=true --no-cache=true --rm=true -t myorg/myapp .")
       {"Successfully built 87793b8f30d9", 0}
     end)

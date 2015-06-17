@@ -34,7 +34,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   def init_from_request(request) do
     workflow = request.workflow
     cond do
-      workflow.source_repo_git_ref == nil -> {:error, "Missing source_repo_git_ref"}
       workflow.deployment_repo == nil -> {:error, "Missing deployment_repo"}
       true ->
         output_dir = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/deployment_repos/#{workflow.id}"

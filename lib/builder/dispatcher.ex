@@ -8,6 +8,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.Builder.MessageManager
   alias OpenAperture.Builder.DeploymentRepo
+  alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Configuration
 
   alias OpenAperture.ManagerApi
@@ -110,11 +111,28 @@ defmodule OpenAperture.Builder.Dispatcher do
       {:error, reason} -> 
         Workflow.step_failed(builder_request.orchestrator_request, "Failed to create DeploymentRepo!", reason)
         {:error, reason}
-      {:ok, deployment_repo} -> 
+      {:ok, deployment_repo} ->
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}
-          Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
-          execute_milestone(:config, {:ok, builder_request})
+          source_ref = case builder_request.workflow.source_repo_git_ref do
+             nil ->
+              case deployment_repo.source_repo do
+                nil -> nil
+                source_repo -> SourceRepo.get_current_commit_hash(source_repo)
+              end
+             ref ->
+              ref
+          end
+
+          case source_ref do
+            nil ->
+              Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
+              {:error, "Missing source_repo_git_ref"}
+            _ ->
+              builder_request = update_in(builder_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
+              Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
+              execute_milestone(:config, {:ok, builder_request})
+          end
         after
           Logger.debug("Cleaning up DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
           DeploymentRepo.cleanup(deployment_repo)

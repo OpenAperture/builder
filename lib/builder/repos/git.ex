@@ -113,5 +113,21 @@ defmodule OpenAperture.Builder.Git do
         Logger.error(error_message)
         {:error, error_message}
     end
-  end	
+  end 
+
+  @doc """
+  Retrieves the current git commit hash
+  """
+  @spec get_current_commit_hash(Repo.t) :: {:ok, String.t} | {:error, String.t}
+  def get_current_commit_hash(repo) do
+    case System.cmd("/bin/bash", ["-c", "git rev-parse HEAD"], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
+      {message, 0} ->
+        Logger.debug "Successfully retrieved the current git commit hash: \n#{String.trim message}"
+        {:ok, String.trim message}
+      {message, code} ->
+        error_message = "An error occurred retrieving the current git commit hash (returned #{code}):\n#{message}"
+        Logger.error(error_message)
+        {:error, error_message}
+    end
+  end 
 end

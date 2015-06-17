@@ -126,10 +126,6 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.unload(DockerHosts)
   end
 
-  test "init_from_request - no source_repo_git_ref", %{request: request} do
-    assert DeploymentRepo.init_from_request(request) == {:error, "Missing source_repo_git_ref"}
-  end
-
   test "init_from_request - no deployment_repo", %{request: request} do
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     request = %{request | workflow: workflow}

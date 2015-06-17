@@ -122,4 +122,8 @@ defmodule OpenAperture.Builder.SourceRepo do
       nil
     end
   end
+
+  def get_current_commit_hash(source_repo) do
+    Git.get_current_commit_hash(source_repo.github_source_repo)
+  end
 end
