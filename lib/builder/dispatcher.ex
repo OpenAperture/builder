@@ -117,7 +117,7 @@ defmodule OpenAperture.Builder.Dispatcher do
           source_ref = cond do
             builder_request.workflow.source_repo_git_ref != nil -> builder_request.workflow.source_repo_git_ref
             deployment_repo.source_repo == nil -> nil
-            true -> SourceRepo.get_current_commit_hash(deployment_repo.source_repo)
+            true -> SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
           end
 
           if source_ref == nil || String.length(source_ref) == 0 do

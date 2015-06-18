@@ -289,7 +289,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.expect(SubscriptionHandler, :acknowledge, fn _, _ -> :ok end)    
     
     :meck.new(OpenAperture.Builder.Git, [:passthrough])
-    :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> "commit_hash_from_source_repo" end) 
+    :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> {:ok, "commit_hash_from_source_repo"} end) 
     
     Dispatcher.process_request(request)
   after
