@@ -124,7 +124,7 @@ defmodule OpenAperture.Builder.Git do
     case System.cmd("/bin/bash", ["-c", "git rev-parse HEAD"], [{:cd, repo.local_repo_path}, {:stderr_to_stdout, true}]) do
       {message, 0} ->
         Logger.debug "Successfully retrieved the current git commit hash: \n#{String.trim message}"
-        {:ok, String.trim message}
+        {:ok, String.strip message}
       {message, code} ->
         error_message = "An error occurred retrieving the current git commit hash (returned #{code}):\n#{message}"
         Logger.error(error_message)
