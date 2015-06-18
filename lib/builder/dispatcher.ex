@@ -119,12 +119,11 @@ defmodule OpenAperture.Builder.Dispatcher do
               builder_request.workflow.source_repo_git_ref
             _ ->
               new_ref = SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
-              case new_ref == builder_request.workflow.source_repo_git_ref do
-                true ->
-                  builder_request.workflow.source_repo_git_ref
-                false ->
-                  builder_request = Workflow.add_event_to_log(builder_request, "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}")
-                  new_ref
+              if new_ref == builder_request.workflow.source_repo_git_ref do
+                builder_request.workflow.source_repo_git_ref
+              else
+                builder_request = Workflow.add_event_to_log(builder_request, "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}")
+                new_ref
               end
           end
 
