@@ -21,7 +21,7 @@ defmodule OpenAperture.Builder.GithubTest do
   test "clone -- success", context do
     repo = context[:repo]
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git clone #{repo.remote_url} #{repo.local_repo_path}" in args
       {"cool test message", 0}
     end)
@@ -40,7 +40,7 @@ defmodule OpenAperture.Builder.GithubTest do
   test "checkout -- success", context do
     repo = context[:repo]
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git checkout #{repo.branch}" in args
       {"cool success message", 0}
     end)
@@ -60,7 +60,7 @@ defmodule OpenAperture.Builder.GithubTest do
     repo = context[:repo]
     path = "/some/test/path"
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git add " <> path in args
       {"cool success message", 0}
     end)
@@ -81,7 +81,7 @@ defmodule OpenAperture.Builder.GithubTest do
     path = "cool_folder"
 
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git add -A #{path}" in args
       {"cool success message", 0}
     end)
@@ -103,7 +103,7 @@ defmodule OpenAperture.Builder.GithubTest do
     repo = context[:repo]
     message = "cool commit message"
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git commit -m \"#{message}\"" in args
       {"cool success message", 0}
     end)
@@ -124,7 +124,7 @@ defmodule OpenAperture.Builder.GithubTest do
     repo = context[:repo]
 
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert "git push" in args
       {"cool success message", 0}
     end)

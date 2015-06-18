@@ -60,7 +60,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
     :meck.new(System, [:unstick])
     :meck.expect(System, :cmd, fn command, args, _opts ->
-      assert command == "/bin/bash" || "cmd.exe"
+      assert command == "/bin/bash" || command == "cmd.exe"
       assert String.contains?(Enum.at(args, 1), "docker build --force-rm=true --no-cache=true --rm=true -t myorg/myapp .")
       {"Successfully built 87793b8f30d9", 0}
     end)
@@ -83,7 +83,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker build --force-rm=true --no-cache=true --rm=true -t myorg/myapp .")
        {"bad news bears", 128}
      end)
@@ -108,7 +108,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker tag --force=true 87793b8f30d9 customtag")
        {"Successfully built 87793b8f30d9", 0}
      end)
@@ -130,7 +130,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker tag --force=true 87793b8f30d9 customtag")
        {"bad news bears", 128}
      end)
@@ -155,7 +155,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker push myorg/myapp")
        {"Successfully built 87793b8f30d9", 0}
      end)
@@ -177,7 +177,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker push myorg/myapp")
        {"bad news bears", 128}
      end)
@@ -202,7 +202,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker pull myorg/myapp")
        {"Successfully built 87793b8f30d9", 0}
      end)
@@ -223,7 +223,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker pull myorg/myapp")
        {"bad news bears", 128}
      end)
@@ -253,7 +253,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"Successfully built 87793b8f30d9", 0}
      end)
 
@@ -273,7 +273,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"bad news bears", 128}
      end)
 
@@ -297,7 +297,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker ps -aq")
        {"bad news bears", 128}
      end) 
@@ -317,7 +317,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker ps -aq")
        {"", 0}
      end) 
@@ -337,7 +337,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker ps -aq")
        {"12345\n23456", 0}
      end) 
@@ -361,7 +361,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker ps -aq")
        {"12345\n23456", 0}
      end) 
@@ -384,7 +384,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker inspect 098xyz")
        {file_contents, 0}
      end) 
@@ -406,7 +406,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker inspect df605fc2be56a369efb170fb42ca938cc8f31c6b2dde8ee5a0c43eda63eae5fe")
        {file_contents, 0}
      end) 
@@ -432,7 +432,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        assert String.contains?(Enum.at(args, 1), "docker ps -aq")
        {"12345\n23456", 0}
      end) 
@@ -454,7 +454,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"bad news bears", 128}
      end) 
 
@@ -475,7 +475,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 0}
      end) 
 
@@ -499,7 +499,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 0}
      end) 
 
@@ -520,7 +520,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc", 128}
      end) 
 
@@ -541,7 +541,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc", 0}
      end) 
 
@@ -565,7 +565,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 0}
      end) 
 
@@ -586,7 +586,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc", 128}
      end) 
 
@@ -610,7 +610,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 0}
      end) 
 
@@ -632,7 +632,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 0}
      end) 
 
@@ -653,7 +653,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc", 128}
      end) 
 
@@ -677,7 +677,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc\n234a", 0}
      end) 
 
@@ -698,7 +698,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 128}
      end) 
 
@@ -722,7 +722,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"123abc\n234a", 0}
      end) 
 
@@ -743,7 +743,7 @@ defmodule OpenAperture.Builder.DockerTests do
 
      :meck.new(System, [:unstick, :passthrough])
      :meck.expect(System, :cmd, fn command, _args, _opts ->
-       assert command == "/bin/bash"
+       assert command == "/bin/bash" || command == "cmd.exe"
        {"", 128}
      end) 
 
