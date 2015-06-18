@@ -127,7 +127,6 @@ defmodule OpenAperture.Builder.Dispatcher do
           case source_ref do
             nil ->
               Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
-              {:error, "Missing source_repo_git_ref"}
             _ ->
               builder_request = update_in(builder_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
               Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
