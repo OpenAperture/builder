@@ -125,6 +125,7 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   @spec get_current_commit_hash!(SourceRepo) :: String.t
   def get_current_commit_hash!(source_repo) do
+    Logger.debug "calling get_current_commit_hash(source_repo)"
     case get_current_commit_hash(source_repo) do
       {:ok, hash} -> hash
       {:error, reason} -> raise reason
@@ -133,6 +134,7 @@ defmodule OpenAperture.Builder.SourceRepo do
 
   @spec get_current_commit_hash(SourceRepo) :: {:ok, String.t} | {:error, String.t}
   def get_current_commit_hash(source_repo) do
+    Logger.debug "calling Git.get_current_commit_hash"
     Git.get_current_commit_hash(source_repo.github_source_repo)
   end
 end
