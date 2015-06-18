@@ -114,26 +114,21 @@ defmodule OpenAperture.Builder.Dispatcher do
       {:ok, deployment_repo} ->
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}
-          Logger.debug "source ref:determining"
           source_ref = case deployment_repo.source_repo do
             nil ->
-              Logger.debug "source ref:no source repo"
               builder_request.workflow.source_repo_git_ref
             _ ->
-              Logger.debug "source ref:source repo"
+              Logger.debug "Checking source repo for current commit hash"
               new_ref = SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
-              Logger.debug "source ref:new_ref: #{new_ref}"
               if new_ref == builder_request.workflow.source_repo_git_ref do
-                Logger.debug "source ref:new_ref equals old ref"
                 builder_request.workflow.source_repo_git_ref
               else
-                Logger.debug "source ref:new_ref different from old ref"
-                builder_request = Workflow.add_event_to_log(builder_request, "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}")
+                msg = "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}"
+                Logger.debug msg
+                builder_request = Workflow.add_event_to_log(builder_request, msg)
                 new_ref
               end
           end
-          Logger.debug "source ref:calculated source_ref: #{source_ref}"
-
           if source_ref == nil || String.length(source_ref) == 0 do
             Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
           else
