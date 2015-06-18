@@ -120,7 +120,7 @@ defmodule OpenAperture.Builder.Dispatcher do
             true -> SourceRepo.get_current_commit_hash(deployment_repo.source_repo)
           end
 
-          if source_ref == nil || String.length("source_ref") == 0 do
+          if source_ref == nil || String.length(source_ref) == 0 do
             Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
           else
             builder_request = update_in(builder_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
