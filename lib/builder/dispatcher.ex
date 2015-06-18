@@ -121,6 +121,7 @@ defmodule OpenAperture.Builder.Dispatcher do
               Logger.debug "Checking source repo for current commit hash"
               new_ref = SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
               if new_ref == builder_request.workflow.source_repo_git_ref do
+                Logger.debug "Source repo commit hash matches builder request workflow git ref: #{builder_request.workflow.source_repo_git_ref}"
                 builder_request.workflow.source_repo_git_ref
               else
                 msg = "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}"
