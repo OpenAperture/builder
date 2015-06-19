@@ -126,20 +126,19 @@ defmodule OpenAperture.Builder.Dispatcher do
               else
                 msg = "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}"
                 Logger.debug msg
-                builder_request = Workflow.add_event_to_log(builder_request, msg)
-                builder_request.workflow |> inspect |> Logger.debug
+                orchestrator_request = Workflow.add_event_to_log(builder_request.orchestrator_request, msg)
+                builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
                 new_ref
               end
           end
           if source_ref == nil || String.length(source_ref) == 0 do
             Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
           else
-            builder_request.workflow |> inspect |> Logger.debug
-            builder_request = update_in(builder_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
-            builder_request.workflow |> inspect |> Logger.debug
+            orchestrator_request = builder_request.orchestrator_request
+            orchestrator_request = update_in(orchestrator_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
+            builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
             Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
             execute_milestone(:config, {:ok, builder_request})
-            builder_request.workflow |> inspect |> Logger.debug
           end
         after
           Logger.debug("Cleaning up DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
