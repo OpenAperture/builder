@@ -251,7 +251,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
   test "process_request - success" do
     request = %BuilderRequest{
-    	orchestrator_request: %Request{},
+    	orchestrator_request: %Request{workflow: %Workflow{}},
     	deployment_repo: %DeploymentRepo{
     		etcd_token: "123abc",
         source_repo: %SourceRepo{}
@@ -271,6 +271,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.expect(BuildMilestone, :execute, fn _ -> {:ok, request} end)
 
     :meck.new(Workflow, [:passthrough])
+    :meck.expect(Workflow, :add_event_to_log, fn req, msg -> req end)
     :meck.expect(Workflow, :step_completed, fn orchestrator_request -> 
     	assert orchestrator_request.etcd_token == "123abc"
     	assert orchestrator_request.deployable_units == []
