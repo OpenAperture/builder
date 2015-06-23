@@ -5,13 +5,18 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExists do
 
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
-	tag = "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}"
-	:ok = Docker.cleanup_image(request.deployment_repo.docker_repo, tag)
-	case Docker.pull(request.deployment_repo.docker_repo, tag) do
-        :ok -> 
-          {:ok, add_message(request, "Verified #{tag} exists in docker repo")}
-        {:error, error_msg} ->
-          {:error, "Docker image (#{tag}) not found in docker repo: #{error_msg}", request}
+    case (request.image_found) do
+      true ->
+        {:ok, request}
+      _    ->
+        tag = "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}"
+      	:ok = Docker.cleanup_image(request.deployment_repo.docker_repo, tag)
+      	case Docker.pull(request.deployment_repo.docker_repo, tag) do
+          :ok -> 
+            {:ok, add_message(request, "Verified #{tag} exists in docker repo")}
+          {:error, error_msg} ->
+            {:error, "Docker image (#{tag}) not found in docker repo: #{error_msg}", request}
+        end
     end
   end
 

@@ -487,18 +487,20 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   {:ok, status_messages} or {:error, reason, status_messages}
   """
-  @spec create_docker_image(DeploymentRepo, String.t()) :: {:ok, List} | {:error, String.t(), List}
+  @spec create_docker_image(DeploymentRepo, String.t()) :: {:ok, List, boolean} | {:error, String.t(), List}
   def create_docker_image(repo, tag) do
     status_messages = []
     # attempt to do a docker pull to determine if image already exists (unless force_build is true)
     # Unfortunately it's not possible to browse or search private repos (https://docs.docker.com/docker-hub/repos/#private-repositories),
     # so a pull the only option available
+    image_found = false
     if repo.force_build == true do
       requires_build = true
       status_messages = status_messages ++ ["The force_build flag has been set, requesting docker build"]
     else
       requires_build = case Docker.pull(repo.docker_repo, tag) do
         :ok -> 
+          image_found = true
           status_messages = status_messages ++ ["The docker image #{tag} already exists, skipping docker build"]
           false
         {:error, _error_msg} -> 
@@ -520,7 +522,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
                   case Docker.push(repo.docker_repo) do
                     {:ok, _} -> 
                       status_messages = status_messages ++ ["Successfully pushed image #{image_id}"]
-                      {:ok, status_messages}
+                      {:ok, status_messages, image_found}
                     {:error, reason} -> {:error, reason, status_messages}
                   end
                 {:error, reason} -> {:error, reason, status_messages}
@@ -537,7 +539,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       end      
     else
       Docker.cleanup_image_cache(repo.docker_repo, repo.docker_repo_name)
-      {:ok, status_messages}
+      {:ok, status_messages, image_found}
     end
   end
 end

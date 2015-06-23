@@ -926,7 +926,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
         registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
       }
     }    
-    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    {:ok, status_messages, false} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
     assert length(status_messages) > 0
   after
     :meck.unload(Docker)
@@ -946,7 +946,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
       }
     }
 
-    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    {:ok, status_messages, false} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
     assert length(status_messages) > 0
   after
     :meck.unload(Docker)
@@ -958,7 +958,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: false}
-    {:ok, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
+    {:ok, status_messages, true} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
     assert length(status_messages) > 0    
   after
     :meck.unload(Docker)
