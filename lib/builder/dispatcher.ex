@@ -114,32 +114,8 @@ defmodule OpenAperture.Builder.Dispatcher do
       {:ok, deployment_repo} ->
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}
-          source_ref = case deployment_repo.source_repo do
-            nil ->
-              builder_request.workflow.source_repo_git_ref
-            _ ->
-              Logger.debug "Checking source repo for current commit hash"
-              new_ref = SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
-              if new_ref == builder_request.workflow.source_repo_git_ref do
-                Logger.debug "Source repo commit hash matches builder request workflow git ref: #{builder_request.workflow.source_repo_git_ref}"
-                builder_request.workflow.source_repo_git_ref
-              else
-                msg = "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}"
-                Logger.debug msg
-                orchestrator_request = Workflow.add_event_to_log(builder_request.orchestrator_request, msg)
-                builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
-                new_ref
-              end
-          end
-          if source_ref == nil || String.length(source_ref) == 0 do
-            Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
-          else
-            orchestrator_request = builder_request.orchestrator_request
-            orchestrator_request = update_in(orchestrator_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
-            builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
-            Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
-            execute_milestone(:config, {:ok, builder_request})
-          end
+          Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
+          execute_milestone(:config, {:ok, builder_request})
         after
           Logger.debug("Cleaning up DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
           DeploymentRepo.cleanup(deployment_repo)

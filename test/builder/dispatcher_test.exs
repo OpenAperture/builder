@@ -262,10 +262,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     }
 
     :meck.new(ConfigMilestone, [:passthrough])
-    :meck.expect(ConfigMilestone, :execute, fn p1 -> 
-                                        assert p1.workflow.source_repo_git_ref == "commit_hash_from_source_repo"
-                                        {:ok, request}
-                                         end)
+    :meck.expect(ConfigMilestone, :execute, fn p1 -> {:ok, request} end)
 
     :meck.new(BuildMilestone, [:passthrough])
     :meck.expect(BuildMilestone, :execute, fn _ -> {:ok, request} end)
@@ -289,16 +286,12 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.new(SubscriptionHandler, [:passthrough])
     :meck.expect(SubscriptionHandler, :acknowledge, fn _, _ -> :ok end)    
     
-    :meck.new(OpenAperture.Builder.Git, [:passthrough])
-    :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> {:ok, "commit_hash_from_source_repo"} end) 
-    
     Dispatcher.process_request(request)
   after
     :meck.unload(Workflow)
     :meck.unload(DeploymentRepo)  	
     :meck.unload(BuildMilestone)
     :meck.unload(ConfigMilestone)
-    :meck.unload(OpenAperture.Builder.Git)
     :meck.unload(MessageManager)
     :meck.unload(SubscriptionHandler)
   end  
