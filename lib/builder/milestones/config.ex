@@ -26,7 +26,6 @@ defmodule OpenAperture.Builder.Milestones.Config do
   """
   @spec execute(BuilderRequest) :: {:ok, BuilderRequest} | {:error, String.t, BuilderRequest}
   def execute(builder_request) do
-
     case get_source_repo_ref(builder_request) do
       {:error, builder_request, reason} ->
         {:error, builder_request, reason}

@@ -120,7 +120,7 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
   test "execute - set current git hash" do
     request = %BuilderRequest{
       workflow: %Workflow{source_repo_git_ref: "123abc"},
-      orchestrator_request: %Request{workflow: %Workflow{source_repo_git_ref: "123abc"}, fleet_config: %{}},
+      orchestrator_request: %Request{workflow: %Workflow{source_repo_git_ref: "123abc"}},
       deployment_repo: %DeploymentRepo{
         etcd_token: "123abc",
         source_repo: %SourceRepo{}
@@ -133,8 +133,7 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> :ok end)
 
     :meck.new(Workflow, [:passthrough])
-    :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
-    :meck.expect(Workflow, :add_event_to_log, fn _,_ -> request end)
+    :meck.expect(Workflow, :publish_success_notification, fn req, _ -> req end)
 
     :meck.new(OpenAperture.Builder.Git, [:passthrough])
     :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> {:ok, "commit_hash_from_git"} end)
