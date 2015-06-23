@@ -20,6 +20,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
   alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Milestones.Config, as: ConfigMilestone
   alias OpenAperture.Builder.Milestones.Build, as: BuildMilestone
+  alias OpenAperture.Builder.Milestones.VerifyBuildExists, as: VerifyBuildExistsMilestone
 
   # ===================================
   # register_queues tests
@@ -132,6 +133,9 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.new(BuildMilestone, [:passthrough])
     :meck.expect(BuildMilestone, :execute, fn _ -> {:ok, request} end)
 
+    :meck.new(VerifyBuildExistsMilestone, [:passthrough])
+    :meck.expect(VerifyBuildExistsMilestone, :execute, fn _ -> {:ok, request} end)
+
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :step_completed, fn orchestrator_request -> 
     	assert orchestrator_request.etcd_token == "123abc"
@@ -147,6 +151,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.unload(Workflow)
     :meck.unload(DeploymentRepo)  	
     :meck.unload(BuildMilestone)
+    :meck.unload(VerifyBuildExistsMilestone)
   end  
 
   test "execute_milestone(:build) - failure" do
@@ -179,7 +184,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        current_step: "build"
       }
     }
 
@@ -188,6 +194,9 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(BuildMilestone, [:passthrough])
     :meck.expect(BuildMilestone, :execute, fn _ -> {:ok, request} end)
+
+    :meck.new(VerifyBuildExistsMilestone, [:passthrough])
+    :meck.expect(VerifyBuildExistsMilestone, :execute, fn _ -> {:ok, request} end)
 
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :step_completed, fn orchestrator_request -> 
@@ -205,6 +214,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.unload(DeploymentRepo)  	
     :meck.unload(BuildMilestone)
     :meck.unload(ConfigMilestone)
+    :meck.unload(VerifyBuildExistsMilestone)
   end  
 
   test "execute_milestone(:config) - failure" do
@@ -214,7 +224,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        current_step: "build"
       }
     }
 
@@ -257,7 +268,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
         source_repo: %SourceRepo{}
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        current_step: "build"
       }
     }
 
@@ -266,6 +278,9 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(BuildMilestone, [:passthrough])
     :meck.expect(BuildMilestone, :execute, fn _ -> {:ok, request} end)
+
+    :meck.new(VerifyBuildExistsMilestone, [:passthrough])
+    :meck.expect(VerifyBuildExistsMilestone, :execute, fn _ -> {:ok, request} end)
 
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :add_event_to_log, fn req, msg -> req end)
@@ -294,6 +309,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     :meck.unload(ConfigMilestone)
     :meck.unload(MessageManager)
     :meck.unload(SubscriptionHandler)
+    :meck.unload(VerifyBuildExistsMilestone)
   end  
 
   test "process_request - failure" do
