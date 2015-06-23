@@ -8,13 +8,13 @@ defmodule OpenAperture.Builder.Dispatcher do
   alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.Builder.MessageManager
   alias OpenAperture.Builder.DeploymentRepo
-  alias OpenAperture.Builder.SourceRepo
   alias OpenAperture.Builder.Configuration
 
   alias OpenAperture.ManagerApi
 
   alias OpenAperture.Builder.Milestones.Config, as: ConfigMilestone
   alias OpenAperture.Builder.Milestones.Build, as: BuildMilestone
+  alias OpenAperture.Builder.Milestones.VerifyBuildExists, as: VerifyBuildExistsMilestone
 
   @moduledoc """
   This module contains the logic to dispatch Builder messsages to the appropriate GenServer(s) 
@@ -114,32 +114,8 @@ defmodule OpenAperture.Builder.Dispatcher do
       {:ok, deployment_repo} ->
         try do
           builder_request = %{builder_request | deployment_repo: deployment_repo}
-          source_ref = case deployment_repo.source_repo do
-            nil ->
-              builder_request.workflow.source_repo_git_ref
-            _ ->
-              Logger.debug "Checking source repo for current commit hash"
-              new_ref = SourceRepo.get_current_commit_hash!(deployment_repo.source_repo)
-              if new_ref == builder_request.workflow.source_repo_git_ref do
-                Logger.debug "Source repo commit hash matches builder request workflow git ref: #{builder_request.workflow.source_repo_git_ref}"
-                builder_request.workflow.source_repo_git_ref
-              else
-                msg = "Git commit hash resolved from checkout: #{builder_request.workflow.source_repo_git_ref} -> #{new_ref}"
-                Logger.debug msg
-                orchestrator_request = Workflow.add_event_to_log(builder_request.orchestrator_request, msg)
-                builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
-                new_ref
-              end
-          end
-          if source_ref == nil || String.length(source_ref) == 0 do
-            Workflow.step_failed(builder_request.orchestrator_request, "Missing source_repo_git_ref", "")
-          else
-            orchestrator_request = builder_request.orchestrator_request
-            orchestrator_request = update_in(orchestrator_request.workflow.source_repo_git_ref, fn _ -> source_ref end)
-            builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
-            Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
-            execute_milestone(:config, {:ok, builder_request})
-          end
+          Logger.debug("Executing milestones for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
+          execute_milestone(:config, {:ok, builder_request})
         after
           Logger.debug("Cleaning up DeploymentRepo for request #{builder_request.delivery_tag} (workflow #{builder_request.workflow.id})")
           DeploymentRepo.cleanup(deployment_repo)
@@ -167,7 +143,7 @@ defmodule OpenAperture.Builder.Dispatcher do
 
   @doc """
   Method to execute the Config milestone
-
+  After a config milestone, we skip build if the "workflow" milestone was config, not build.
   ## Options
 
   The `request` option defines the BuilderRequest
@@ -179,7 +155,11 @@ defmodule OpenAperture.Builder.Dispatcher do
   @spec execute_milestone(:config, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:config, {:ok, request}) do
     Logger.debug("Executing :config milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
-    execute_milestone(:build, ConfigMilestone.execute(request))
+    next_milestone = case request.workflow.current_step do
+      "config" -> :verify_build_exists
+      "build" ->  :build
+    end
+    execute_milestone(next_milestone, ConfigMilestone.execute(request))
   end
 
   @doc """
@@ -196,7 +176,24 @@ defmodule OpenAperture.Builder.Dispatcher do
   @spec execute_milestone(:build, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:build, {:ok, request}) do
     Logger.debug("Executing :build milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
-    execute_milestone(:completed, BuildMilestone.execute(request))
+    execute_milestone(:verify_build_exists, BuildMilestone.execute(request))
+  end
+
+  @doc """
+  Method to execute the verify_build_exists milestone
+
+  ## Options
+
+  The `request` option defines the BuilderRequest
+
+  ## Return Value
+
+  {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  """
+  @spec execute_milestone(:verify_build_exists, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
+  def execute_milestone(:verify_build_exists, {:ok, request}) do
+    Logger.debug("Executing :verify_build_exists milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
+    execute_milestone(:completed, VerifyBuildExistsMilestone.execute(request))
   end
 
   @doc """

@@ -22,7 +22,7 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> 
                                                           :timer.sleep(1_000)
-                                                          {:ok, ["Status", "Status"]} end)
+                                                          {:ok, ["Status", "Status"], false} end)
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)

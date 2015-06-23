@@ -9,7 +9,8 @@ defmodule OpenAperture.Builder.Request do
   defstruct workflow: nil, 
   					orchestrator_request: nil,
 	  				deployment_repo: nil,
-	  				delivery_tag: nil
+	  				delivery_tag: nil,
+            image_found: false
 
   @type t :: %__MODULE__{}
 
