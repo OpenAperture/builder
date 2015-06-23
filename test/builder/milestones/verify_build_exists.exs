@@ -31,7 +31,7 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExistsTest do
     :meck.expect(Workflow, :add_event_to_log, fn req, msg -> req end)
   	{status, msg, _} = VerifyBuildExists.execute(request)
   	assert status == :error
-  	assert msg == "Docker image (:) not found in docker hub: bad news bears"
+  	assert msg == "Docker image (:) not found in docker repo: bad news bears"
   after
   	:meck.unload(Docker)
   	:meck.unload(Workflow)
