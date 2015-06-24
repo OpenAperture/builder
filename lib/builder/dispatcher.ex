@@ -156,10 +156,14 @@ defmodule OpenAperture.Builder.Dispatcher do
   def execute_milestone(:config, {:ok, request}) do
     Logger.debug("Executing :config milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
     next_milestone = case request.workflow.current_step do
-      "config" -> :verify_build_exists
-      "build" ->  :build
+      :config -> :verify_build_exists
+      :build ->  :build
+      _ -> :error
     end
-    execute_milestone(next_milestone, ConfigMilestone.execute(request))
+    case next_milestone do
+      :error -> Workflow.step_failed(request.orchestrator_request, "Unknown next step: #{request.workflow.current_step}", "")
+      _      -> execute_milestone(next_milestone, ConfigMilestone.execute(request))
+    end
   end
 
   @doc """

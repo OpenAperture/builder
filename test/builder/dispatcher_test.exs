@@ -185,7 +185,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: "build"
+        current_step: :build
       }
     }
 
@@ -225,7 +225,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: "build"
+        current_step: :build
       }
     }
 
@@ -269,7 +269,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: "build"
+        current_step: :build
       }
     }
 
