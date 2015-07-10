@@ -10,7 +10,9 @@ defmodule OpenAperture.Builder.Request do
   					orchestrator_request: nil,
 	  				deployment_repo: nil,
 	  				delivery_tag: nil,
-            image_found: false
+            image_found: false,
+            stdout_build_log_tail_pid: nil,
+            stderr_build_log_tail_pid: nil
 
   @type t :: %__MODULE__{}
 

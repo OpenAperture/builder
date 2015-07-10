@@ -4,6 +4,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.Request, as: BuilderRequest
+  alias OpenAperture.Builder.Docker
 
   @moduledoc """
   This module contains the logic for the "Build" Workflow milestone
@@ -61,20 +62,49 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   @spec execute_internal(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   defp execute_internal(request) do
-    Logger.info ("Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}...")    
-    case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
-      {:ok, status_messages, image_found} ->
-        request = %{request | image_found: image_found}
-        request = Enum.reduce status_messages, request, fn(status_message, request) ->
-          BuilderRequest.publish_success_notification(request, status_message)
-        end
-        
-        {:ok, request}
-      {:error, reason, status_messages} -> 
-        request = Enum.reduce status_messages, request, fn(status_message, request) ->
-          BuilderRequest.publish_success_notification(request, status_message)
-        end        
-        {:error, "Failed to build docker image #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}:  #{inspect reason}", request}
+    request = start_build_output_monitor request
+    try do
+      Logger.info ("Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}...")    
+      case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
+        {:ok, status_messages, image_found} ->
+          request = %{request | image_found: image_found}
+          request = Enum.reduce status_messages, request, fn(status_message, request) ->
+            BuilderRequest.publish_success_notification(request, status_message)
+          end
+          
+          {:ok, request}
+        {:error, reason, status_messages} -> 
+          request = Enum.reduce status_messages, request, fn(status_message, request) ->
+            BuilderRequest.publish_success_notification(request, status_message)
+          end        
+          {:error, "Failed to build docker image #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}:  #{inspect reason}", request}
+      end
+    after
+      end_build_output_monitor request
     end
   end
+
+  defp start_build_output_monitor(request) do
+    {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1))
+    {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1))
+    %{request | stdout_build_log_tail_pid: stdout_pid, stderr_build_log_tail_pid: stderr_pid}
+  end
+
+  defp end_build_output_monitor(request) do
+    if request.stdout_build_log_tail_pid != nil do
+      Tail.stop(request.stdout_build_log_tail_pid)
+    else
+      Logger.warn("stdout_build_log_tail_pid was nil")
+    end
+    if request.stderr_build_log_tail_pid != nil do
+      Tail.stop(request.stderr_build_log_tail_pid)
+    else
+      Logger.warn("stderr_build_log_tail_pid was nil")
+    end
+  end
+
+  defp notify_build_log(msg) do
+    Logger.info("Docker Build Tail: #{msg}")
+  end
+
 end

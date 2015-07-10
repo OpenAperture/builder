@@ -12,7 +12,9 @@ defmodule OpenAperture.Builder.Docker do
             registry_url: nil,
             registry_username: nil,
             registry_email: nil,
-            registry_password: nil
+            registry_password: nil,
+            stdout_build_log_uuid: UUID.uuid1(),
+            stderr_build_log_uuid: UUID.uuid1()
 
   @type t :: %__MODULE__{}
 
@@ -297,7 +299,7 @@ defmodule OpenAperture.Builder.Docker do
   @spec build(Docker) :: {:ok, String.t()} | {:error, String.t()}
   def build(docker) do
     Logger.info ("Requesting docker build...")
-    case  execute_docker_cmd(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .") do
+    case  execute_docker_cmd(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", docker.stdout_build_log_uuid, docker.stderr_build_log_uuid) do
       {:ok, stdout, stderr} ->
 
         # Step 0 : FROM ubuntu
@@ -399,14 +401,14 @@ defmodule OpenAperture.Builder.Docker do
 
   @doc false
   # Method to execute a Docker command.  Will wrap the command with a Docker login and store stdout and stderr
-  @spec execute_docker_cmd(Docker.t, String.t()) :: {:ok, String.t(), String.t()} | {:error, String.t(), String.t()}
-  defp execute_docker_cmd(docker, docker_cmd) do
+  @spec execute_docker_cmd(Docker.t, String.t, String.t, String.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t}
+  defp execute_docker_cmd(docker, docker_cmd, stdout_log_uuid \\ UUID.uuid1(), stderr_log_uuid \\ UUID.uuid1()) do
     case login(docker) do
       :ok ->
         File.mkdir_p("#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker")
 
-        stdout_file = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{UUID.uuid1()}.log"
-        stderr_file = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{UUID.uuid1()}.log"
+        stdout_file = log_file_from_uuid stdout_log_uuid
+        stderr_file = log_file_from_uuid stderr_log_uuid
         resolved_cmd = "DOCKER_HOST=#{docker.docker_host} #{docker_cmd} 2> #{stderr_file} > #{stdout_file}"
 
         Logger.debug ("Executing Docker command:  #{resolved_cmd}")
@@ -423,6 +425,10 @@ defmodule OpenAperture.Builder.Docker do
         end
       {:error, reason} -> {:error, reason, ""}
     end  
+  end
+
+  def log_file_from_uuid uuid do
+    "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{uuid}.log"
   end
 
   @doc false

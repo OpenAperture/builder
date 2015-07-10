@@ -3,6 +3,7 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
 
   alias OpenAperture.Builder.Milestones.Build
   alias OpenAperture.Builder.DeploymentRepo
+  alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.Request, as: BuilderRequest
 
 	alias OpenAperture.WorkflowOrchestratorApi.Request
@@ -13,7 +14,10 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     	workflow: %Workflow{},
     	orchestrator_request: %Request{},
     	deployment_repo: %DeploymentRepo{
-    		etcd_token: "123abc"
+    		etcd_token: "123abc",
+        docker_repo: %Docker{
+
+        }
     	}
     }
     
@@ -29,11 +33,17 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
 
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
     :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)    
+    
+    :meck.new(Tail, [:passthrough])
+    :meck.expect(Tail, :start_link, fn _, _ -> {:ok, "a pid"} end)
+    :meck.expect(Tail, :stop, fn _ -> :ok end)
 
+    
 
     assert Build.execute(request) == {:ok, request}
   after
-  	:meck.unload(DeploymentRepo)
+    :meck.unload(Tail)
+    :meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
     :meck.unload(OpenAperture.ManagerApi.Workflow)
   end
@@ -43,7 +53,10 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
       workflow: %Workflow{},
       orchestrator_request: %Request{},
       deployment_repo: %DeploymentRepo{
-        etcd_token: "123abc"
+        etcd_token: "123abc",
+        docker_repo: %Docker{
+
+        }
       }
     }
     response = %{body: JSON.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
@@ -57,9 +70,14 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
     :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)
 
+    :meck.new(Tail, [:passthrough])
+    :meck.expect(Tail, :start_link, fn _, _ -> {:ok, "a pid"} end)
+    :meck.expect(Tail, :stop, fn _ -> :ok end)
+
     {:error, _, returned_request} = Build.execute(request)
     assert returned_request == request
   after
+    :meck.unload(Tail)
     :meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
     :meck.unload(OpenAperture.ManagerApi.Workflow)
@@ -70,7 +88,10 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
       workflow: %Workflow{},
       orchestrator_request: %Request{},
       deployment_repo: %DeploymentRepo{
-        etcd_token: "123abc"
+        etcd_token: "123abc",
+        docker_repo: %Docker{
+
+        }
       }
     }
 
@@ -85,10 +106,16 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
     :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)    
 
+    :meck.new(Tail, [:passthrough])
+    :meck.expect(Tail, :start_link, fn _, _ -> {:ok, "a pid"} end)
+    :meck.expect(Tail, :stop, fn _ -> :ok end)
+
+    
     {:error, error_string, returned_request} = Build.execute(request)
     assert error_string == "Workflow is in error state"
     assert returned_request == request
   after
+    :meck.unload(Tail)
     :meck.unload(DeploymentRepo)
     :meck.unload(BuilderRequest)
     :meck.unload(OpenAperture.ManagerApi.Workflow)
