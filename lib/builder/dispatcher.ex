@@ -78,6 +78,8 @@ defmodule OpenAperture.Builder.Dispatcher do
 
       try do
         Logger.debug("Starting to process request #{delivery_tag} (workflow #{payload[:id]})")
+        builder_request = BuilderRequest.publish_success_notification(builder_request, "Build/Config request is being processed by Builder #{System.get_env("HOSTNAME")}")
+        builder_request = BuilderRequest.save_workflow(builder_request)
         process_request(builder_request)
       catch
         :exit, code   -> 
