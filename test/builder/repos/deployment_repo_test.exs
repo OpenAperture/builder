@@ -184,7 +184,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
       source_repo: "myorg/myrepo", 
       source_repo_git_ref: "master"
     }) end)
@@ -323,7 +323,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "this is not json" end)
 
     assert_raise RuntimeError,
-                 "{:unexpected_token, \"this is not json\"}",
+                 "{:invalid, \"t\"}",
                  fn -> %DeploymentRepo{} |> DeploymentRepo.populate_docker_repo_name! end
   after
     :meck.unload(File)
@@ -332,7 +332,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "get_docker_repo_name(repo) success" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{docker_url: "testreponame"}) end)
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{docker_url: "testreponame"}) end)
 
     docker_repo_name = DeploymentRepo.populate_docker_repo_name!(%DeploymentRepo{})
     assert docker_repo_name == "testreponame"
@@ -343,7 +343,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "get_docker_repo_name(repo) not in json" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{}) end)
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{}) end)
 
     assert_raise RuntimeError,
                  "Unable to get the docker repo name, docker_repo_name not specified and docker_url not specified in docker.json",
@@ -357,7 +357,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
       source_repo: "myorg/myrepo", 
       source_repo_git_ref: "master"
     }) end)
@@ -383,7 +383,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "this isn't actually json" end)
 
     assert_raise RuntimeError,
-                 "An error occurred parsing source.json JSON! {:unexpected_token, \"this isn't actually json\"}",
+                 "An error occurred parsing source.json JSON! {:invalid, \"t\"}",
                  fn -> DeploymentRepo.populate_source_repo!(deploy_repo, %Workflow{}) end
   after
     :meck.unload(File)   
@@ -394,7 +394,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{
       source_repo: "myorg/myrepo"
     }) end)
 
@@ -533,7 +533,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "https://github.com/OpenAperture/test" end)
 
     assert_raise RuntimeError,
-                 "An error occurred parsing source.json JSON! {:unexpected_token, \"https://github.com/OpenAperture/test\"}",
+                 "An error occurred parsing source.json JSON! {:invalid, \"h\"}",
                  fn -> DeploymentRepo.populate_source_repo!(deploy_repo, workflow) end
   after
     :meck.unload(File)
@@ -575,7 +575,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "user/repo" end)
 
     assert_raise RuntimeError,
-                 "{:unexpected_token, \"user/repo\"}",
+                 "{:invalid, \"u\"}",
                  fn -> DeploymentRepo.populate_docker_repo_name!(deploy_repo) end
   after
     :meck.unload(File)
@@ -1016,7 +1016,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "this is not json" end)
 
     assert_raise RuntimeError,
-                 "An error occurred parsing Fleet JSON!  {:unexpected_token, \"this is not json\"}",
+                 "An error occurred parsing Fleet JSON!  {:invalid, \"t\"}",
                  fn -> %DeploymentRepo{} |> DeploymentRepo.get_fleet_config! end
   after
     :meck.unload(File)
@@ -1025,7 +1025,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "get_fleet_config(repo) success" do
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
-    :meck.expect(File, :read!, fn _ -> JSON.encode!(%{instance_cnt: 10}) end)
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{instance_cnt: 10}) end)
 
     config = DeploymentRepo.get_fleet_config!(%DeploymentRepo{})
     assert config["instance_cnt"] == 10

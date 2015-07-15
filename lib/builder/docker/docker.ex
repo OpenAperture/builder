@@ -278,7 +278,7 @@ defmodule OpenAperture.Builder.Docker do
 
       case execute_docker_cmd(docker, inspect_cmd) do
         {:ok, stdout, _} ->
-          Enum.reduce JSON.decode!(stdout), [], fn(container_info, containers_for_image) ->
+          Enum.reduce Poison.decode!(stdout), [], fn(container_info, containers_for_image) ->
             if (container_info["Image"] != nil && String.contains?(container_info["Image"], image_id)) do
               Logger.debug("Container #{container_info["Id"]} is using image #{image_id}")
               containers_for_image ++ [container_info["Id"]]

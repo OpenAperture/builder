@@ -93,4 +93,23 @@ defmodule OpenAperture.Builder.Request do
     orchestrator_request = Workflow.publish_success_notification(builder_request.orchestrator_request, message)
     %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
   end
+
+  @doc """
+  Convenience wrapper to save the updated Workflow
+
+  ## Options
+   
+  The `builder_request` option defines the Request
+
+  The `message` option defines the message to publish
+
+  ## Return values
+
+  Request
+  """
+  @spec save_workflow(OpenAperture.Builder.Request.t) :: OpenAperture.Builder.Request.t
+  def save_workflow(builder_request) do
+    orchestrator_request = Workflow.save(builder_request.orchestrator_request)
+    %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
+  end
 end

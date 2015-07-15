@@ -26,11 +26,15 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
 
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)
+
     {:ok, returned_request} = Config.execute(request)
     assert returned_request != nil
   after
   	:meck.unload(DeploymentRepo)
     :meck.unload(Workflow)
+    :meck.unload(BuilderRequest)
   end
 
   test "execute - success, no files" do
@@ -49,11 +53,15 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
 
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)
+
     {:ok, returned_request} = Config.execute(request)
     assert returned_request != nil
   after
     :meck.unload(DeploymentRepo)
     :meck.unload(Workflow)
+    :meck.unload(BuilderRequest)
   end
 
   test "execute - failure" do
@@ -73,11 +81,15 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
 
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)
+
     {:error, _, returned_request} = Config.execute(request)
     assert returned_request != nil
   after
   	:meck.unload(DeploymentRepo)
     :meck.unload(Workflow)
+    :meck.unload(BuilderRequest)
   end  
 
   test "execute - set notifications config" do
@@ -98,6 +110,9 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
 
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)
+
     :meck.new(OpenAperture.Builder.Git, [:passthrough])
     :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> {:ok, "123abc"} end)
 
@@ -115,6 +130,7 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.unload(Workflow)
     :meck.unload(SourceRepo)
     :meck.unload(OpenAperture.Builder.Git)
+    :meck.unload(BuilderRequest)
   end
 
   test "execute - set current git hash" do
@@ -135,6 +151,9 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn req, _ -> req end)
 
+    :meck.new(BuilderRequest, [:passthrough])
+    :meck.expect(BuilderRequest, :save_workflow, fn req -> req end)
+
     :meck.new(OpenAperture.Builder.Git, [:passthrough])
     :meck.expect(OpenAperture.Builder.Git, :get_current_commit_hash, fn _ -> {:ok, "commit_hash_from_git"} end)
 
@@ -149,5 +168,6 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.unload(Workflow)
     :meck.unload(SourceRepo)
     :meck.unload(OpenAperture.Builder.Git)
+    :meck.unload(BuilderRequest)
   end
 end

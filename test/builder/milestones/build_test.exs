@@ -21,7 +21,7 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
     	}
     }
     
-    response = %{body: JSON.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
+    response = %{body: Poison.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> 
@@ -30,6 +30,7 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)  
 
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
     :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)    
@@ -59,13 +60,14 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
         }
       }
     }
-    response = %{body: JSON.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
+    response = %{body: Poison.decode!("{\"workflow_error\":false,\"workflow_completed\":false}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> {:error, "bad news bears", ["Status", "Status"]} end)
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)  
 
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
     :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)
@@ -95,16 +97,17 @@ defmodule OpenAperture.Builder.Milestones.BuildTest do
       }
     }
 
-    response = %{body: JSON.decode!("{\"workflow_error\":true,\"workflow_completed\":true}")}
+    response = %{body: Poison.decode!("{\"workflow_error\":true,\"workflow_completed\":true}")}
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :create_docker_image, fn _, _ -> :timer.sleep(100_000) end)
 
     :meck.new(BuilderRequest, [:passthrough])
     :meck.expect(BuilderRequest, :publish_success_notification, fn _, _ -> request end)    
+    :meck.expect(BuilderRequest, :save_workflow, fn _ -> request end)  
 
     :meck.new(OpenAperture.ManagerApi.Workflow, [:passthrough])
-    :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)    
+    :meck.expect(OpenAperture.ManagerApi.Workflow, :get_workflow, fn _ -> response end)
 
     :meck.new(Tail, [:passthrough])
     :meck.expect(Tail, :start_link, fn _, _ -> {:ok, "a pid"} end)

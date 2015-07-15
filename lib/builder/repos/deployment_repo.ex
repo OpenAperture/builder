@@ -144,7 +144,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
     if File.exists?(output_path) do
       Logger.info("Resolving source info from #{output_path}...")
-      case output_path |> File.read! |> JSON.decode do
+      case output_path |> File.read! |> Poison.decode do
         {:ok, json} -> {:ok, json}
         {:error, reason} -> {:error, "An error occurred parsing source.json JSON! #{inspect reason}"}
       end
@@ -170,7 +170,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     etcd_json = "#{output_dir}/etcd.json"
     if File.exists?(etcd_json) do
       Logger.info("Retrieving the etcd token...")
-      case JSON.decode(File.read!(etcd_json)) do
+      case Poison.decode(File.read!(etcd_json)) do
         {:ok, json} -> case json["token"] do
                           nil -> {:error, "token missing from etcd.json"}
                           "" -> {:error, "invalid token in etcd.json"}
@@ -200,7 +200,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     etcd_json = "#{output_dir}/fleet.json"
     if File.exists?(etcd_json) do
       Logger.info("Loading custom Fleet configuration...")
-      case JSON.decode(File.read!(etcd_json)) do
+      case Poison.decode(File.read!(etcd_json)) do
         {:ok, json} -> {:ok, json}
         {:error, reason} -> {:error, "An error occurred parsing Fleet JSON!  #{inspect reason}"}
       end
@@ -224,7 +224,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec populate_docker_repo_name(DeploymentRepo) :: {:ok, String.t()} | {:error, String.t()}
   defp populate_docker_repo_name(repo) do
     if File.exists?("#{repo.output_dir}/docker.json") do
-      case JSON.decode(File.read!("#{repo.output_dir}/docker.json")) do
+      case Poison.decode(File.read!("#{repo.output_dir}/docker.json")) do
         {:ok, json} -> 
           case json["docker_url"] do
             nil -> {:error, "Unable to get the docker repo name, docker_repo_name not specified and docker_url not specified in docker.json"}
@@ -265,7 +265,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       }
 
       docker_repo = if File.exists?("#{repo.output_dir}/docker.json") do
-        case JSON.decode(File.read!("#{repo.output_dir}/docker.json")) do
+        case Poison.decode(File.read!("#{repo.output_dir}/docker.json")) do
           {:ok, json} -> 
             case json["docker_registry_url"] do
               nil -> dockerhub_repo

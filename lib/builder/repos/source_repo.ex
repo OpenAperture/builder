@@ -111,7 +111,7 @@ defmodule OpenAperture.Builder.SourceRepo do
 
     if File.exists?(output_path) do
       Logger.info("Resolving OpenAperture info from #{output_path}...")
-      openaperture_json = case File.read!(output_path) |> JSON.decode do
+      openaperture_json = case File.read!(output_path) |> Poison.decode do
         {:ok, json} -> json
         {:error, reason} ->  
           Logger.error("An error occurred parsing OpenAperture JSON! #{inspect reason}")
