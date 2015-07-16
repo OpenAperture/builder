@@ -20,7 +20,7 @@
   "poison": {:hex, :poison, "1.4.0"},
   "rabbit_common": {:hex, :rabbit_common, "3.5.0"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"},
-  "tail": {:git, "https://github.com/TheFirstAvenger/elixir-tail", "ac91cb79fb8e81ea20d15cd8f66ec3bd5967fcfe", [ref: "ac91cb79fb8e81ea20d15cd8f66ec3bd5967fcfe"]},
+  "tail": {:git, "https://github.com/TheFirstAvenger/elixir-tail", "31f44c6d28874ba8f85066012bc686fb510073b6", [ref: "31f44c6d28874ba8f85066012bc686fb510073b6"]},
   "timex": {:hex, :timex, "0.12.9"},
   "timex_extensions": {:git, "https://github.com/OpenAperture/timex_extensions.git", "1665c1df90397702daf492c6f940e644085016cd", [ref: "1665c1df90397702daf492c6f940e644085016cd"]},
   "uuid": {:hex, :uuid, "0.1.5"}}
