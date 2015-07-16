@@ -105,8 +105,8 @@ defmodule OpenAperture.Builder.Milestones.Build do
     end
   end
 
-  defp notify_build_log(msg) do
-    Logger.info("Docker Build Tail: #{msg}")
+  defp notify_build_log(msg_list) do
+    Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
   end
 
 end
