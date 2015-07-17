@@ -34,7 +34,6 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
       nil ->
         routing_key = "build_logs"
         queue = QueueBuilder.build(ManagerApi.get_api, routing_key, exchange_id)
-        IO.inspect queue
         options = ConnectionOptionsResolver.get_for_broker(ManagerApi.get_api, broker_id)
         queue_and_options_dict = Dict.put(queue_and_options_dict, {exchange_id, broker_id}, {queue, options})
         {queue_and_options_dict, queue, options}
