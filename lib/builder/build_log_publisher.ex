@@ -20,16 +20,16 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
 	end
 
   def handle_cast({:publish, workflow_id, logs, exchange_id, broker_id}, queue_and_options_dict) do
-    {queue_and_options_dict, queue, options} = get_queue_and_options(queue_and_options_dict, exchange_id, broker_id)
+    {queue_and_options_dict, queue, options} = __MODULE__.get_queue_and_options(queue_and_options_dict, exchange_id, broker_id)
     payload = %{workflow_id: workflow_id, logs: logs}
-    case publish(options, queue, payload) do
+    case __MODULE__.publish(options, queue, payload) do
       :ok -> nil
       {:error, reason} -> Logger.error("[BuildLogPublisher] Failed to publish BuildLog event:  #{inspect reason}")
     end
     {:noreply, queue_and_options_dict}
   end
 
-  defp get_queue_and_options(queue_and_options_dict, exchange_id, broker_id) do
+  def get_queue_and_options(queue_and_options_dict, exchange_id, broker_id) do
     case Dict.get(queue_and_options_dict, {exchange_id, broker_id}) do
       nil ->
         routing_key = "build_logs"
