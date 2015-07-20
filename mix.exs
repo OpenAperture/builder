@@ -44,7 +44,7 @@ defmodule OpenAperture.Builder.Mixfile do
       {:openaperture_overseer_api, git: "https://github.com/OpenAperture/overseer_api.git", ref: "4b9146507ab50789fec4696b96f79642add2b502", override: true},
       {:openaperture_fleet, git: "https://github.com/OpenAperture/fleet.git", ref: "714c52b5258f96e741b57c73577431caa6f480b3", override: true},
       {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "c66fa165e9ee07250d264b4b63ce375692e2b7cc", override: true},
-      {:tail, git: "https://github.com/TheFirstAvenger/elixir-tail", ref: "31f44c6d28874ba8f85066012bc686fb510073b6"},
+      {:tail, git: "https://github.com/TheFirstAvenger/elixir-tail", ref: "ac91cb79fb8e81ea20d15cd8f66ec3bd5967fcfe"},
       {:timex, "~> 0.12.9"},
       {:fleet_api, "~> 0.0.11", override: true},
 
