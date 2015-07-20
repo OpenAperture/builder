@@ -86,27 +86,27 @@ defmodule OpenAperture.Builder.Milestones.Build do
     #end
   end
 
-  defp start_build_output_monitor(request) do
-    {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1))
-    {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1))
-    %{request | stdout_build_log_tail_pid: stdout_pid, stderr_build_log_tail_pid: stderr_pid}
-  end
+#  defp start_build_output_monitor(request) do
+#    {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1))
+#    {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1))
+#    %{request | stdout_build_log_tail_pid: stdout_pid, stderr_build_log_tail_pid: stderr_pid}
+#  end
 
-  defp end_build_output_monitor(request) do
-    if request.stdout_build_log_tail_pid != nil do
-      Tail.stop(request.stdout_build_log_tail_pid)
-    else
-      Logger.warn("stdout_build_log_tail_pid was nil")
-    end
-    if request.stderr_build_log_tail_pid != nil do
-      Tail.stop(request.stderr_build_log_tail_pid)
-    else
-      Logger.warn("stderr_build_log_tail_pid was nil")
-    end
-  end
+#  defp end_build_output_monitor(request) do
+#    if request.stdout_build_log_tail_pid != nil do
+#      Tail.stop(request.stdout_build_log_tail_pid)
+#    else
+#      Logger.warn("stdout_build_log_tail_pid was nil")
+#    end
+#    if request.stderr_build_log_tail_pid != nil do
+#      Tail.stop(request.stderr_build_log_tail_pid)
+#    else
+#      Logger.warn("stderr_build_log_tail_pid was nil")
+#    end
+#  end
 
-  defp notify_build_log(msg_list) do
-    Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
-  end
+#  defp notify_build_log(msg_list) do
+#    Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
+#  end
 
 end
