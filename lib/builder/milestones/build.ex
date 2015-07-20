@@ -4,7 +4,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.Request, as: BuilderRequest
-  alias OpenAperture.Builder.Docker
+  #alias OpenAperture.Builder.Docker
 
   @moduledoc """
   This module contains the logic for the "Build" Workflow milestone
