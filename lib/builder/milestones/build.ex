@@ -62,8 +62,8 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   @spec execute_internal(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   defp execute_internal(request) do
-    request = start_build_output_monitor request
-    try do    
+    #request = start_build_output_monitor request
+    #try do    
       request = BuilderRequest.publish_success_notification(request, "Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref} on docker host #{request.deployment_repo.docker_repo.docker_host}...")
       request = BuilderRequest.save_workflow(request)
       case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
@@ -81,9 +81,9 @@ defmodule OpenAperture.Builder.Milestones.Build do
           request = BuilderRequest.save_workflow(request)
           {:error, "Failed to build docker image #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}:  #{inspect reason}", request}
       end
-    after
-      end_build_output_monitor request
-    end
+    #after
+    #  end_build_output_monitor request
+    #end
   end
 
   defp start_build_output_monitor(request) do
