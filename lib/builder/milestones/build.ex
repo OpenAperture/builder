@@ -64,7 +64,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
   defp execute_internal(request) do
     request = start_build_output_monitor request
     try do    
-      request = BuilderRequest.publish_success_notification(request, "Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}...")
+      request = BuilderRequest.publish_success_notification(request, "Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref} on docker host #{request.deployment_repo.docker_repo.docker_host}...")
       request = BuilderRequest.save_workflow(request)
       case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
         {:ok, status_messages, image_found} ->

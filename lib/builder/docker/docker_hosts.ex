@@ -34,14 +34,8 @@ defmodule OpenAperture.Builder.DockerHosts do
         if cur_hosts_cnt == 1 do
           host = List.first(hosts)
         else
-          host_idx = :random.uniform(cur_hosts_cnt)-1
-          {host, _cur_idx} = Enum.reduce hosts, {nil, 0}, fn (current_host, {host, cur_idx}) ->
-            if cur_idx == host_idx do
-              {current_host, cur_idx+1}
-            else
-              {host, cur_idx+1}
-            end
-          end
+          :random.seed(:os.timestamp)
+          host = List.first(Enum.shuffle(hosts))
         end
 
         if (host != nil && host.primaryIP != nil) do
