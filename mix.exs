@@ -46,7 +46,7 @@ defmodule OpenAperture.Builder.Mixfile do
       {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "c66fa165e9ee07250d264b4b63ce375692e2b7cc", override: true},
       {:tail, git: "https://github.com/TheFirstAvenger/elixir-tail", ref: "31f44c6d28874ba8f85066012bc686fb510073b6"},
       {:timex, "~> 0.12.9"},
-      {:fleet_api, "~> 0.0.11", override: true},
+      {:fleet_api, "~> 0.0.14", override: true},
 
       {:meck, "0.8.2", only: :test},
      ]
