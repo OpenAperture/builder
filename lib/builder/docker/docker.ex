@@ -45,251 +45,27 @@ defmodule OpenAperture.Builder.Docker do
   end
 
   @doc """
-  Method to cleanup any Docker cache files that were generated during builds
-  """
-  #@spec cleanup_cache(Docker)
-  def cleanup_cache(docker) do
-    Logger.info ("Cleaning up docker cache...")
-
-    Logger.info ("Stopping containers..")
-    case  execute_docker_cmd(docker, "docker stop $(DOCKER_HOST=#{docker.docker_host} docker ps -a -q)") do
-      {:ok, stdout, stderr} ->
-        Logger.debug ("Successfully stopped containers")
-        Logger.debug("#{stdout}\n#{stderr}")
-      {:error, _, _} ->
-        Logger.debug("No containers to stop")
-    end
-
-    #http://jimhoskins.com/2013/07/27/remove-untagged-docker-images.html
-    Logger.info ("Cleaning up stopped containers...")
-    case  execute_docker_cmd(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host} docker ps -a -q)") do
-      {:ok, stdout, stderr} ->
-        Logger.debug ("Successfully cleaned up stopped containers")
-        Logger.debug("#{stdout}\n#{stderr}")
-      {:error, _, _} ->
-        Logger.debug("No containers to clean up")
-    end
-
-    Logger.info ("Cleaning up untagged images...")
-    case  execute_docker_cmd(docker, "docker rmi $(DOCKER_HOST=#{docker.docker_host} docker images | grep \"^<none>\" | awk \"{print $3}\")") do
-      {:ok, stdout, stderr} ->
-        Logger.debug ("Successfully cleaned up untagged images")
-        Logger.debug("#{stdout}\n#{stderr}")
-      {:error, _, _} ->
-        Logger.debug("No untagged images to clean up")
-    end
-
-    #http://jonathan.bergknoff.com/journal/building-good-docker-images
-    Logger.info ("Cleaning up remaining images...")
-    case  execute_docker_cmd(docker, "docker rmi $(DOCKER_HOST=#{docker.docker_host} docker images -q)") do
-      {:ok, stdout, stderr} ->
-        Logger.debug ("Successfully cleaned up remaining images")
-        Logger.debug("#{stdout}\n#{stderr}")
-      {:error, _, _} ->
-        Logger.debug("No remaining images to clean up")
-    end
-
-    :ok
-  end 
-
-  @doc """
   Method to cleanup any cache associated with an image id
   """
   @spec cleanup_image_cache(Docker, String.t()) :: :ok | {:error, String.t()}
-  def cleanup_image_cache(docker, image_id \\ nil) do
+  def cleanup_image_cache(docker, _image_id \\ nil) do
+    Logger.debug ("Executing docker cache cleanup commands...")
     try do
-      cond do
-        image_id != nil -> cleanup_image(docker, image_id)
-        docker.image_id != nil -> cleanup_image(docker, docker.image_id)
-        true -> {:error, "docker image id not specified in cleanup_image_cache"}
-      end
-    rescue e in _ -> {:error, "An error occurred cleaning up cache for image #{image_id}:  #{inspect e}"}
-    end
-  end
-
-  @doc """
-  Method to cleanup any dangling images that remain on the host
-  """
-  @spec cleanup_image(Docker, String.t()) :: :ok | {:error, String.t()}
-  def cleanup_image(docker, image_id) do
-    Logger.info ("Cleaning up image #{image_id}...")
-
-    #cleanup containers
-    all_containers = get_containers(docker)
-    image_containers = find_containers_for_image(docker, image_id, all_containers)
-    cleanup_container(docker, image_containers)
-
-    #cleanup the image
-    case  execute_docker_cmd(docker, "docker rmi #{image_id}") do
-      {:ok, _, _} -> Logger.debug("Successfully removed image #{image_id}")
-      {:error, stdout, stderr} -> {:error, "An error occurred removing image #{image_id}:  #{stdout}\n#{stderr}"}
-    end 
-
-    #cleanup dangling images
-    cleanup_dangling_images(docker) 
-  end
-
-  @doc """
-  Method to cleanup any dangling images that remain on the host
-  """
-  @spec cleanup_dangling_images(Docker) :: :ok
-  def cleanup_dangling_images(docker) do
-    Logger.debug("Disabled dangling image cleanup")
-    cleanup_exited_containers(docker)
-    #http://jonathan.bergknoff.com/journal/building-good-docker-images
-    Logger.info ("Cleaning up dangling images...")
-    dangling_images = case  execute_docker_cmd(docker, "docker images -q --filter \"dangling=true\"") do
-        {:ok, stdout, _stderr} ->
-          if String.length(stdout) > 0 do
-            images = String.split(stdout, "\n")
-            if images == nil || length(images) == 0 do
-              nil
-            else
-              Enum.reduce images, "", fn(image, dangling_images) ->
-                "#{dangling_images} #{image}"
-              end
-            end
-          else
-            nil
-          end
-        {:error, stdout, stderr} -> 
-          Logger.debug("An error occurred retrieving dangling images:  #{stdout}\n#{stderr}")
-          nil
+      Logger.debug ("Cleaning up exited containers...")
+      case execute_docker_cmd(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host}  docker ps -f status=exited -q)") do
+        {:ok, result, docker_output} -> Logger.debug ("Successfully cleaned up exited containers:\n#{result}\n\nDocker Tag Output:  #{docker_output}")
+        {:error, result, docker_output} -> Logger.error("Failed to clean up exited containers:\n#{result}\n\n#{docker_output}")
       end
 
-    if dangling_images != nil do
-      Logger.debug("Removing the following dangling images:  #{dangling_images}")
-      case  execute_docker_cmd(docker, "docker rmi #{dangling_images}") do
-        {:error, stdout, stderr} -> Logger.debug("An error occurred deleting dangling images:  #{stdout}\n#{stderr}")
-        _ -> Logger.debug("Successfully cleaned up dangling images")
-      end     
-    end
-    :ok
-  end
-
-  @doc """
-  Method to remove all exited containers
-  """
-  @spec cleanup_exited_containers(Docker) :: List
-  def cleanup_exited_containers(docker) do
-    Logger.info ("Cleaning up existed containers...")
-
-    exited_containers = get_exited_containers(docker)
-    if length(exited_containers) > 0 do
-      container_list = Enum.reduce exited_containers, "docker rm ", fn(container, container_list) ->
-        "#{container_list} #{container}"
-      end 
-
-      case  execute_docker_cmd(docker, container_list) do
-        {:ok, _, _} -> Logger.debug("Successfully removed the stopped containers")
-        {:error, stdout, stderr} -> Logger.debug("An error occurred stopping containers:  #{stdout}\n#{stderr}")
-      end               
-    else
-      Logger.debug("There are no exited containers to cleanup")
-    end
-
-    :ok
-  end
-
-  @doc """
-  Method to retrieve all exited containers
-  """
-  @spec get_exited_containers(Docker) :: List
-  def get_exited_containers(docker) do
-    Logger.info ("Retrieving all exited containers...")
-    case  execute_docker_cmd(docker, "docker ps -a | grep Exited | awk '{print$1}'") do
-      {:ok, stdout, _} ->
-        if String.length(stdout) == 0 do
-          []
-        else
-          containers = String.split(stdout, "\n")
-          Logger.debug("The following exited containers were found:  #{inspect containers}")
-          containers
-        end
-      {:error, stdout, stderr} -> 
-        Logger.error("An error occurred retrieving the containers:  #{stdout}\n#{stderr}")
-      []
-    end
-  end
-
-  @doc """
-  Method to stop and remove the running containers
-  """
-  @spec cleanup_container(Docker, List) :: :ok
-  def cleanup_container(docker, [container|remaining_containers]) do
-    Logger.debug("Stopping container #{container}...")
-    case  execute_docker_cmd(docker, "docker stop #{container}") do
-      {:ok, _, _} -> Logger.debug("Successfully stopped container #{container}")
-      {:error, stdout, stderr} -> Logger.debug("An error occurred stopping container #{container}:  #{stdout}\n#{stderr}")
-    end
-
-    Logger.debug("Removing container #{container}...")
-    case  execute_docker_cmd(docker, "docker rm #{container}") do
-      {:ok, _, _} -> 
-        Logger.debug("Successfully removed container #{container}")
-      {:error, stdout, stderr} -> 
-        Logger.error("An error occurred removing container #{container}:  #{stdout}\n#{stderr}")
-    end 
-    cleanup_container(docker, remaining_containers)   
-  end
-
-  @doc """
-  Method to stop and remove the running containers
-  """
-  @spec cleanup_container(Docker, List) :: :ok
-  def cleanup_container(_docker, []) do
-    Logger.debug("Successfully cleaned up all containers")
-    :ok
-  end
-
-  @doc """
-  Method to find all of the containers running on a docker host
-  """
-  @spec get_containers(Docker) :: List
-  def get_containers(docker) do
-    Logger.info ("Retrieving all containers...")
-    case  execute_docker_cmd(docker, "docker ps -aq") do
-      {:ok, stdout, _} ->
-        if String.length(stdout) == 0 do
-          []
-        else
-          containers = String.split(stdout, "\n")
-          Logger.debug("The following containers were found:  #{inspect containers}")
-          containers
-        end
-      {:error, stdout, stderr} -> 
-        Logger.error("An error occurred retrieving the containers:  #{stdout}\n#{stderr}")
-      []
-    end    
-  end
-
-  @doc """
-  Method to parse through a list of containers to determine if any are running against an image
-  """
-  @spec find_containers_for_image(Docker, String.t(), List) :: List
-  def find_containers_for_image(docker, image_id, containers) do
-    Logger.info ("Finding containers for image #{image_id}...")
-    if containers == nil || length(containers) == 0 do
-      []
-    else
-      inspect_cmd = Enum.reduce containers, "docker inspect", fn(container, inspect_cmd) ->
-        "#{inspect_cmd} #{container}"
+      Logger.debug ("Cleaning up dangling images...")
+      case execute_docker_cmd(docker, "docker rmi $(DOCKER_HOST=#{docker.docker_host}  docker images -q -f dangling=true)") do
+        {:ok, result, docker_output} -> Logger.debug ("Successfully cleaned up dangling images:\n#{result}\n\nDocker Tag Output:  #{docker_output}")
+        {:error, result, docker_output} -> Logger.error("Failed to clean up dangling images:\n#{result}\n\n#{docker_output}")
       end
-
-      case execute_docker_cmd(docker, inspect_cmd) do
-        {:ok, stdout, _} ->
-          Enum.reduce Poison.decode!(stdout), [], fn(container_info, containers_for_image) ->
-            if (container_info["Image"] != nil && String.contains?(container_info["Image"], image_id)) do
-              Logger.debug("Container #{container_info["Id"]} is using image #{image_id}")
-              containers_for_image ++ [container_info["Id"]]
-            else
-              containers_for_image
-            end
-          end
-        {:error, stdout, stderr} -> 
-          Logger.error("An error occurred retrieving the containers:  #{stdout}\n#{stderr}")
-          []
-      end
+         
+      Logger.debug ("Successfully completed docker cache cleanup commands")
+      :ok
+    rescue e in _ -> {:error, "An error occurred cleaning up docker cache:  #{inspect e}"}
     end
   end
 
@@ -414,9 +190,9 @@ defmodule OpenAperture.Builder.Docker do
         Logger.debug ("Executing Docker command:  #{resolved_cmd}")
         try do
           case Util.execute_command(resolved_cmd, "#{docker.output_dir}") do
-            {stdout, 0} ->
+            {_stdout, 0} ->
               {:ok, read_output_file(stdout_file), read_output_file(stderr_file)}
-            {stdout, _} ->
+            {_stdout, _} ->
               {:error, read_output_file(stdout_file), read_output_file(stderr_file)}
           end
         after
