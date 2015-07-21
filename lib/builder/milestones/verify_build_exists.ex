@@ -1,3 +1,5 @@
+require Logger
+
 defmodule OpenAperture.Builder.Milestones.VerifyBuildExists do
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.Request, as: BuilderRequest
@@ -10,7 +12,8 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExists do
         {:ok, request}
       _    ->
         tag = "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}"
-      	:ok = Docker.cleanup_image(request.deployment_repo.docker_repo, tag)
+        Logger.debug("[VerifyBuildExists] Image exists, clearing tag #{tag}...")
+      	:ok = Docker.cleanup_image_cache(request.deployment_repo.docker_repo, tag)
       	case Docker.pull(request.deployment_repo.docker_repo, tag) do
           :ok -> 
             {:ok, add_message(request, "Verified #{tag} exists in docker repo")}
