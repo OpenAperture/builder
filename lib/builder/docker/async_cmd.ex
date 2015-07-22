@@ -3,21 +3,26 @@ require Logger
 defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
   def execute(cmd, cmd_opts, callbacks) do
+    raise "Goon driver not found, unable to kill process if needed!"
+            
     Task.async(fn -> 
         path = :os.find_executable('goon')
-        if !Porcelain.Driver.Goon.check_goon_version(path) do
-          {:error, "Goon driver not found, unable to kill process if needed!", nil, nil}
-        else
-          if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
+        cond do
+          path == false ->
+            {:error, "Goon driver not found, unable to kill process if needed!", nil, nil}
+          !Porcelain.Driver.Goon.check_goon_version(path) ->
+            {:error, "Goon driver not correct version, unable to kill process if needed!", nil, nil}
+          true ->
+            if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
 
-          try do
-            shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
-            monitor_shell(shell_process, callbacks)
-          after
-            if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
-          end          
+            try do
+              shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
+              monitor_shell(shell_process, callbacks)
+            after
+              if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
+            end
         end   
-    end)    
+    end)
   end
 
   def monitor_shell(shell_process, callbacks) do
@@ -25,13 +30,19 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
     cond do
       #process has finished normally
-      !Porcelain.Process.alive?(shell_process) -> {:ok, shell_process.out, shell_process.err}
-
+      !Porcelain.Process.alive?(shell_process) -> 
+        {:ok, result} = Porcelain.Process.await(shell_process)
+        case result.status do
+          0 -> {:ok, shell_process.out, shell_process.err}
+          _ -> {:error, "Nonzero exit from process", shell_process.out, shell_process.err}
+        end
       #process is in-progress, but no interrupt check is needed
-      callbacks[:on_interrupt] == nil -> monitor_shell(shell_process, callbacks)
+      callbacks[:on_interrupt] == nil ->
+        monitor_shell(shell_process, callbacks)
 
       #process is in-progress and interrupt check was ok
-      callbacks[:on_interrupt].() -> monitor_shell(shell_process, callbacks)
+      callbacks[:on_interrupt].() ->
+        monitor_shell(shell_process, callbacks)
 
       #process is in-progress and interrupt check failed
       true -> 

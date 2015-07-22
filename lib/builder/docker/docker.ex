@@ -78,8 +78,8 @@ defmodule OpenAperture.Builder.Docker do
   def build(docker, interrupt_handler \\ nil) do
     Logger.info ("Requesting docker build...")
 
-    async_cmd = execute_async(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", interrupt_handler, docker.stdout_build_log_uuid, docker.stderr_build_log_uuid) do
-    case Task.await(async_cmd) do  
+    result = execute_async(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", interrupt_handler, docker.stdout_build_log_uuid, docker.stderr_build_log_uuid)
+    case result do  
       {:ok, stdout, stderr} ->
 
         # Step 0 : FROM ubuntu

@@ -858,7 +858,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "create_docker_image - force build fails", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
-    :meck.expect(Docker, :build, fn _ -> {:error, "bad news bears"} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:error, "bad news bears"} end)
 
     deploy_repo = %{deploy_repo | force_build: true}
     {:error, reason, status_messages} = DeploymentRepo.create_docker_image(deploy_repo, "tag")
@@ -870,7 +870,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "create_docker_image - force build produces bad image", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
-    :meck.expect(Docker, :build, fn _ -> {:ok, ""} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:ok, ""} end)
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
     deploy_repo = %{deploy_repo | force_build: true}
@@ -883,7 +883,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "create_docker_image - force build tag fails", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
-    :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:error, "bad news bears"} end)
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
 
@@ -897,7 +897,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "create_docker_image - force build push fails", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
-    :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:error, "bad news bears"} end)
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
@@ -916,7 +916,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "create_docker_image - force build success", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
-    :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
@@ -935,7 +935,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   test "create_docker_image - build success", %{deploy_repo: deploy_repo} do
     :meck.new(Docker, [:passthrough])
     :meck.expect(Docker, :pull, fn _,_ -> {:error, "image does not exist"} end)
-    :meck.expect(Docker, :build, fn _ -> {:ok, "123"} end)
+    :meck.expect(Docker, :build, fn _, _ -> {:ok, "123"} end)
     :meck.expect(Docker, :tag, fn _,_,_ -> {:ok, "123"} end)
     :meck.expect(Docker, :push, fn _ -> {:ok, "123"} end)
     :meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
