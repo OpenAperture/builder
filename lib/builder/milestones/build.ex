@@ -8,12 +8,13 @@ defmodule OpenAperture.Builder.Milestones.Build do
 
   @moduledoc """
   This module contains the logic for the "Build" Workflow milestone
-  """  
+  """
 
   @doc """
   Method to wrap the execute call in a check that kills the docker build if the workflow is manually killed
   Agent contains the request and then :completed when the request completes
-  
+
+
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
@@ -63,10 +64,10 @@ defmodule OpenAperture.Builder.Milestones.Build do
   @spec execute_internal(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   defp execute_internal(request) do
     #request = start_build_output_monitor request
-    #try do    
+    #try do
       request = BuilderRequest.publish_success_notification(request, "Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref} on docker host #{request.deployment_repo.docker_repo.docker_host}...")
       request = BuilderRequest.save_workflow(request)
-      case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
+      case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{custom_branch(request.workflow)}#{request.workflow.source_repo_git_ref}_#{timestamp}") do
         {:ok, status_messages, image_found} ->
           request = %{request | image_found: image_found}
           request = Enum.reduce status_messages, request, fn(status_message, request) ->
@@ -74,16 +75,35 @@ defmodule OpenAperture.Builder.Milestones.Build do
           end
           request = BuilderRequest.save_workflow(request)
           {:ok, request}
-        {:error, reason, status_messages} -> 
+        {:error, reason, status_messages} ->
           request = Enum.reduce status_messages, request, fn(status_message, request) ->
             BuilderRequest.publish_success_notification(request, status_message)
-          end        
+          end
           request = BuilderRequest.save_workflow(request)
           {:error, "Failed to build docker image #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}:  #{inspect reason}", request}
       end
     #after
     #  end_build_output_monitor request
     #end
+  end
+
+  @doc false
+  @spec timestamp :: String
+  defp timestamp do
+    {ms, s, ns} = :os.timestamp
+    to_string(ms * 1_000_000_000_000 + s * 1_000_000 + ns)
+  end
+
+  @doc false
+  @spec custom_branch(%{}) :: nil | String.t
+  defp custom_branch(workflow) do
+    case workflow.source_repo do
+      nil  -> nil
+      repo -> case workflow.source_repo[:branch] do
+        nil    -> nil
+        branch -> "#{branch}_"
+      end
+    end
   end
 
 #  defp start_build_output_monitor(request) do
@@ -108,5 +128,4 @@ defmodule OpenAperture.Builder.Milestones.Build do
 #  defp notify_build_log(msg_list) do
 #    Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
 #  end
-
 end
