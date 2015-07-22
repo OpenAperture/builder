@@ -3,25 +3,15 @@ require Logger
 defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
   def execute(cmd, cmd_opts, callbacks) do
-    raise "Goon driver not found, unable to kill process if needed!"
-            
     Task.async(fn -> 
-        path = :os.find_executable('goon')
-        cond do
-          path == false ->
-            {:error, "Goon driver not found, unable to kill process if needed!", nil, nil}
-          !Porcelain.Driver.Goon.check_goon_version(path) ->
-            {:error, "Goon driver not correct version, unable to kill process if needed!", nil, nil}
-          true ->
-            if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
+      if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
 
-            try do
-              shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
-              monitor_shell(shell_process, callbacks)
-            after
-              if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
-            end
-        end   
+      try do
+        shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
+        monitor_shell(shell_process, callbacks)
+      after
+        if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
+      end
     end)
   end
 
@@ -49,5 +39,16 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
         Porcelain.Process.stop(shell_process)
         {:error, "The process was interrupted!", shell_process.out, shell_process.err}        
     end
+  end
+
+  def check_goon do
+    path = :os.find_executable('goon')
+    cond do
+      path == false ->
+        raise "Goon driver not found, unable to kill process if needed!"
+      !Porcelain.Driver.Goon.check_goon_version(path) ->
+        raise "Goon driver not correct version, unable to kill process if needed!"
+      true -> nil
+    end          
   end
 end

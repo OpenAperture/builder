@@ -13,7 +13,8 @@ config :openaperture_builder,
 	docker_registry_url: "https://index.docker.io/v1/",
 	docker_registry_username: "user",
 	docker_registry_email: "user@test.com",
-	docker_registry_password: "pass"
+	docker_registry_password: "pass",
+	skip_goon_check: true
 
 config :openaperture_overseer_api,
 	module_type: :test,
