@@ -18,6 +18,7 @@
   "openaperture_overseer_api": {:git, "https://github.com/OpenAperture/overseer_api.git", "4b9146507ab50789fec4696b96f79642add2b502", [ref: "4b9146507ab50789fec4696b96f79642add2b502"]},
   "openaperture_workflow_orchestrator_api": {:git, "https://github.com/OpenAperture/workflow_orchestrator_api.git", "c66fa165e9ee07250d264b4b63ce375692e2b7cc", [ref: "c66fa165e9ee07250d264b4b63ce375692e2b7cc"]},
   "poison": {:hex, :poison, "1.4.0"},
+  "porcelain": {:hex, :porcelain, "2.0.0"},
   "rabbit_common": {:hex, :rabbit_common, "3.5.0"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"},
   "tail": {:git, "https://github.com/TheFirstAvenger/elixir-tail", "31f44c6d28874ba8f85066012bc686fb510073b6", [ref: "31f44c6d28874ba8f85066012bc686fb510073b6"]},

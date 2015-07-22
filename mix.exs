@@ -47,6 +47,7 @@ defmodule OpenAperture.Builder.Mixfile do
       {:tail, git: "https://github.com/TheFirstAvenger/elixir-tail", ref: "31f44c6d28874ba8f85066012bc686fb510073b6"},
       {:timex, "~> 0.12.9"},
       {:fleet_api, "~> 0.0.14", override: true},
+      {:porcelain, "~>2.0.0"},
 
       {:meck, "0.8.2", only: :test},
      ]

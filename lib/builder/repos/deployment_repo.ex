@@ -487,8 +487,8 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   {:ok, status_messages} or {:error, reason, status_messages}
   """
-  @spec create_docker_image(DeploymentRepo, String.t()) :: {:ok, List, boolean} | {:error, String.t(), List}
-  def create_docker_image(repo, tag) do
+  @spec create_docker_image(DeploymentRepo, String.t(), term) :: {:ok, List, boolean} | {:error, String.t(), List}
+  def create_docker_image(repo, tag, interrupt_handler \\ nil) do
     status_messages = []
     # attempt to do a docker pull to determine if image already exists (unless force_build is true)
     # Unfortunately it's not possible to browse or search private repos (https://docs.docker.com/docker-hub/repos/#private-repositories),
@@ -511,7 +511,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
     if requires_build do
       status_messages = status_messages ++ ["Executing a docker build for #{tag}..."]
-      case Docker.build(repo.docker_repo) do
+      case Docker.build(repo.docker_repo, interrupt_handler) do
         {:ok, image_id} ->
           try do
             if (image_id != nil && String.length(image_id) > 0) do

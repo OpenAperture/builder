@@ -4,6 +4,8 @@ defmodule OpenAperture.Builder.Docker do
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.Util
 
+  alias OpenAperture.Builder.Docker.AsyncCmd
+
   defstruct docker_repo_url: nil,
             docker_host: nil,
             output_dir: nil,
@@ -72,10 +74,12 @@ defmodule OpenAperture.Builder.Docker do
   @doc """
   Method to execute a docker build.
   """
-  @spec build(Docker) :: {:ok, String.t()} | {:error, String.t()}
-  def build(docker) do
+  @spec build(Docker, term) :: {:ok, String.t()} | {:error, String.t()}
+  def build(docker, interrupt_handler \\ nil) do
     Logger.info ("Requesting docker build...")
-    case  execute_docker_cmd(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", docker.stdout_build_log_uuid, docker.stderr_build_log_uuid) do
+
+    async_cmd = execute_async(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", interrupt_handler, docker.stdout_build_log_uuid, docker.stderr_build_log_uuid) do
+    case Task.await(async_cmd) do  
       {:ok, stdout, stderr} ->
 
         # Step 0 : FROM ubuntu
@@ -90,10 +94,10 @@ defmodule OpenAperture.Builder.Docker do
         image_id = List.last(Regex.run(~r/^[a-zA-Z0-9]*/, List.last(parsed_output)))
         Logger.debug ("Successfully built docker image #{image_id}\nDocker Build Output:  #{stdout}\n\n#{stderr}")
         {:ok, image_id}
-      {:error, stdout, stderr} ->
-        error_msg = "Failed to build docker image:\n#{stdout}\n\n#{stderr}"
+      {:error, reason, stdout, stderr} ->
+        error_msg = "Failed to build docker image:  #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}"
         Logger.error(error_msg)
-        {:error, error_msg}
+        {:error, error_msg}        
     end
   end
 
@@ -216,5 +220,30 @@ defmodule OpenAperture.Builder.Docker do
     else
       raise "Unable to read docker output file #{docker_output_file} - file does not exist!"
     end
+  end
+
+  def execute_async(docker, docker_cmd, interrupt_handler, stdout_log_uuid \\ UUID.uuid1(), stderr_log_uuid \\ UUID.uuid1()) do
+    File.mkdir_p("#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker")
+
+    stdout_file = log_file_from_uuid stdout_log_uuid
+    stderr_file = log_file_from_uuid stderr_log_uuid
+    resolved_cmd = "DOCKER_HOST=#{docker.docker_host} #{docker_cmd} 2> #{stderr_file} > #{stdout_file}"
+
+    opts = case docker.output_dir do
+      nil -> []
+      output_dir   ->
+        File.mkdir_p(output_dir)
+        [dir: output_dir]
+    end
+    AsyncCmd.execute(resolved_cmd, opts, %{
+      on_startup: fn -> 
+        Logger.debug ("Executing Docker command:  #{resolved_cmd}")
+      end,
+      on_completed: fn ->
+        File.rm_rf(stdout_file)
+        File.rm_rf(stderr_file)        
+      end,
+      on_interrupt: interrupt_handler
+      })    
   end
 end
