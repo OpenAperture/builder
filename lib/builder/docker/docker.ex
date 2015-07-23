@@ -54,15 +54,15 @@ defmodule OpenAperture.Builder.Docker do
     Logger.debug ("Executing docker cache cleanup commands...")
     try do
       Logger.debug ("Cleaning up exited containers...")
-      case execute_docker_cmd(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host}  docker ps -f status=exited -q)") do
+      case execute_async(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host}  docker ps -f status=exited -q)", nil) do
         {:ok, result, docker_output} -> Logger.debug ("Successfully cleaned up exited containers:\n#{result}\n\nDocker Tag Output:  #{docker_output}")
-        {:error, result, docker_output} -> Logger.error("Failed to clean up exited containers:\n#{result}\n\n#{docker_output}")
+        {:error, reason, stdout, stderr} -> Logger.error("Failed to clean up exited containers:  #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}")
       end
 
       Logger.debug ("Cleaning up dangling images...")
-      case execute_docker_cmd(docker, "docker rmi $(DOCKER_HOST=#{docker.docker_host}  docker images -q -f dangling=true)") do
+      case execute_async(docker, "docker rmi $(DOCKER_HOST=#{docker.docker_host}  docker images -q -f dangling=true)", nil) do
         {:ok, result, docker_output} -> Logger.debug ("Successfully cleaned up dangling images:\n#{result}\n\nDocker Tag Output:  #{docker_output}")
-        {:error, result, docker_output} -> Logger.error("Failed to clean up dangling images:\n#{result}\n\n#{docker_output}")
+        {:error, reason, stdout, stderr} -> Logger.error("Failed to clean up dangling images:  #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}")
       end
          
       Logger.debug ("Successfully completed docker cache cleanup commands")
@@ -107,12 +107,12 @@ defmodule OpenAperture.Builder.Docker do
   @spec tag(Docker, String.t(), [String.t()]) :: {:ok, String.t()} | {:error, String.t()}
   def tag(docker, image_id, [tag|remaining_tags]) do   
     Logger.info ("Requesting docker tag #{tag}...")
-    case execute_docker_cmd(docker, "docker tag --force=true #{image_id} #{tag}") do
+    case execute_async(docker, "docker tag --force=true #{image_id} #{tag}", nil) do
       {:ok, result, docker_output} ->
         Logger.debug ("Successfully tagged docker image #{result}\nDocker Tag Output:  #{docker_output}")
         tag(docker, image_id,remaining_tags)
-      {:error, result, docker_output} ->
-        error_msg = "Failed to tag docker image #{image_id}:\n#{result}\n\n#{docker_output}"
+      {:error, reason, stdout, stderr} ->
+        error_msg = "Failed to tag docker image #{image_id}: #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}"
         Logger.error(error_msg)
         {:error, error_msg}
     end
@@ -132,12 +132,12 @@ defmodule OpenAperture.Builder.Docker do
   @spec push(Docker) :: :ok | :error
   def push(docker) do
     Logger.info ("Requesting docker push...")
-    case  execute_docker_cmd(docker, "docker push #{docker.docker_repo_url}") do
+    case execute_async(docker, "docker push #{docker.docker_repo_url}", nil) do
       {:ok, image_id, docker_output} ->
         Logger.debug ("Successfully pushed docker image\nDocker Push Output:  #{docker_output}")
         {:ok, image_id}
-      {:error, result, docker_output} ->
-        error_msg = "Failed to push docker image:\n#{result}\n\n#{docker_output}"
+      {:error, reason, stdout, stderr} ->
+        error_msg = "Failed to push docker image: #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}"
         Logger.error(error_msg)
         {:error, error_msg}        
     end
@@ -149,12 +149,12 @@ defmodule OpenAperture.Builder.Docker do
   @spec pull(Docker, String.t()) :: :ok | {:error, String.t()}
   def pull(docker, image_name) do
     Logger.info ("Requesting docker pull...")
-    case  execute_docker_cmd(docker, "docker pull #{image_name}") do
+    case execute_async(docker, "docker pull #{image_name}", nil) do
       {:ok, _, docker_output} ->
         Logger.debug ("Successfully pulled docker image\nDocker Pull Output:  #{docker_output}")
         :ok
-      {:error, result, docker_output} ->
-        error_msg = "Failed to pull docker image:\n#{result}\n\n#{docker_output}"
+      {:error, reason, stdout, stderr} ->
+        error_msg = "Failed to pull docker image: #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}"
         Logger.error(error_msg)
         {:error, error_msg}        
     end
@@ -179,47 +179,8 @@ defmodule OpenAperture.Builder.Docker do
     end
   end  
 
-  @doc false
-  # Method to execute a Docker command.  Will wrap the command with a Docker login and store stdout and stderr
-  @spec execute_docker_cmd(Docker.t, String.t, String.t, String.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t}
-  defp execute_docker_cmd(docker, docker_cmd, stdout_log_uuid \\ UUID.uuid1(), stderr_log_uuid \\ UUID.uuid1()) do
-    case login(docker) do
-      :ok ->
-        File.mkdir_p("#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker")
-
-        stdout_file = log_file_from_uuid stdout_log_uuid
-        stderr_file = log_file_from_uuid stderr_log_uuid
-        resolved_cmd = "DOCKER_HOST=#{docker.docker_host} #{docker_cmd} 2> #{stderr_file} > #{stdout_file}"
-
-        Logger.debug ("Executing Docker command:  #{resolved_cmd}")
-        try do
-          case Util.execute_command(resolved_cmd, "#{docker.output_dir}") do
-            {_stdout, 0} ->
-              {:ok, read_output_file(stdout_file), read_output_file(stderr_file)}
-            {_stdout, _} ->
-              {:error, read_output_file(stdout_file), read_output_file(stderr_file)}
-          end
-        after
-          File.rm_rf(stdout_file)
-          File.rm_rf(stderr_file)
-        end
-      {:error, reason} -> {:error, reason, ""}
-    end  
-  end
-
   def log_file_from_uuid uuid do
     "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{uuid}.log"
-  end
-
-  @doc false
-  # Method to read in a file and return contents
-  @spec read_output_file(String.t()) :: String.t()
-  defp read_output_file(docker_output_file) do
-    if File.exists?(docker_output_file) do
-      File.read!(docker_output_file)
-    else
-      raise "Unable to read docker output file #{docker_output_file} - file does not exist!"
-    end
   end
 
   def execute_async(docker, docker_cmd, interrupt_handler, stdout_log_uuid \\ UUID.uuid1(), stderr_log_uuid \\ UUID.uuid1()) do
