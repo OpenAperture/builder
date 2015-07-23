@@ -414,9 +414,9 @@ defmodule OpenAperture.Builder.Docker do
         Logger.debug ("Executing Docker command:  #{resolved_cmd}")
         try do
           case Util.execute_command(resolved_cmd, "#{docker.output_dir}") do
-            {stdout, 0} ->
+            {_stdout, 0} ->
               {:ok, read_output_file(stdout_file), read_output_file(stderr_file)}
-            {stdout, _} ->
+            {_stdout, _} ->
               {:error, read_output_file(stdout_file), read_output_file(stderr_file)}
           end
         after
