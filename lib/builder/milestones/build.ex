@@ -87,12 +87,14 @@ defmodule OpenAperture.Builder.Milestones.Build do
     end
   end
 
+  @spec start_build_output_monitor(BuilderRequest.t) :: BuilderRequest.t
   defp start_build_output_monitor(request) do
     {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1, request))
     {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1, request))
     %{request | stdout_build_log_tail_pid: stdout_pid, stderr_build_log_tail_pid: stderr_pid}
   end
 
+  @spec end_build_output_monitor(BuilderRequest.t) :: term
   defp end_build_output_monitor(request) do
     if request.stdout_build_log_tail_pid != nil do
       Tail.stop(request.stdout_build_log_tail_pid)
@@ -106,6 +108,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
     end
   end
 
+  @spec notify_build_log([String.t], BuilderRequest.t) :: term
   defp notify_build_log(msg_list, request) do
     Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
     BuildLogPublisher.publish_build_logs(request.workflow.workflow_id,
