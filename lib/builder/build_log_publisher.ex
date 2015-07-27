@@ -1,16 +1,18 @@
 defmodule OpenAperture.Builder.BuildLogPublisher do
 	use GenServer
-  @connection_options nil
-  use OpenAperture.Messaging
-  alias OpenAperture.Messaging.AMQP.QueueBuilder
-  alias OpenAperture.Messaging.ConnectionOptionsResolver
-  alias OpenAperture.Messaging.AMQP.ConnectionOptions
 
   alias OpenAperture.ManagerApi
 
-  @spec publish_build_logs(String.t, [String.t], Integer.t, Integer.t) :: :ok
-  def publish_build_logs(workflow_id, logs, exchange_id, broker_id) do
-    GenServer.cast(__MODULE__, {:publish, workflow_id, logs, exchange_id, broker_id})
+  @moduledoc """
+  BuildLogPublisher tracks a list of current {broker_id, exchange_id} tuples, which is cleared and recreated periodically.
+  Additionally, it tracks a hashdict of BrokerExchangePublisher Genserver pids, which is only ever appended to.
+  When publish_build_logs is called, it sends the logs to the BrokerExchangePublisher for each entry in the current
+  broker-exchange tuple list.
+  """
+
+  @spec publish_build_logs(String.t, [String.t]) :: :ok
+  def publish_build_logs(workflow_id, logs) do
+    GenServer.cast(__MODULE__, {:publish, workflow_id, logs})
   end
 
   @spec start_link() :: GenServer.on_start
@@ -18,33 +20,42 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
 		GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
 	end
 
-  @spec init(:ok) :: {:ok, HashDict.t}
+  @spec init(:ok) :: {:ok, {Timestamp.t, [{Integer.t, Integer.t}], HashDict.t}}
 	def init(:ok) do
-		{:ok, HashDict.new}
+    {broker_exchanges, broker_exchange_publishers} = get_broker_exchanges_and_publishers(HashDict.new)
+		{:ok, {:os.timestamp, broker_exchanges, broker_exchange_publishers}}
 	end
 
-  @spec handle_cast({:publish, String.t, [String.t], Integer.t, Integer.t}, HashDict.t) :: {:noreply, HashDict.t}
-  def handle_cast({:publish, workflow_id, logs, exchange_id, broker_id}, queue_and_options_dict) do
-    {queue_and_options_dict, queue, options} = __MODULE__.get_queue_and_options(queue_and_options_dict, exchange_id, broker_id)
-    payload = %{workflow_id: workflow_id, logs: logs}
-    case __MODULE__.publish(options, queue, payload) do
-      :ok -> nil
-      {:error, reason} -> Logger.error("[BuildLogPublisher] Failed to publish BuildLog event:  #{inspect reason}")
-    end
-    {:noreply, queue_and_options_dict}
+  @spec handle_cast({:publish, String.t, [String.t]}, {Timestamp.t, [{Integer.t, Integer.t}], HashDict.t}) :: {:noreply, {Timestamp.t, [{Integer.t, Integer.t}], HashDict.t}}
+  def handle_cast({:publish, workflow_id, logs}, {_last_update, broker_exchanges, broker_exchange_publishers}) do
+    Enum.map(broker_exchanges, fn key ->
+                                  BrokerExchangePublisher.publish_logs(Dict.get(broker_exchange_publishers, key), workflow_id, logs)
+                               end)
   end
 
-  @spec get_queue_and_options(HashDict.t, Integer.t, Integer.t) :: {HashDict.t, Queue.t, ConnectionOptions.t}
-  def get_queue_and_options(queue_and_options_dict, exchange_id, broker_id) do
-    case Dict.get(queue_and_options_dict, {exchange_id, broker_id}) do
-      nil ->
-        routing_key = "build_logs"
-        queue = QueueBuilder.build(ManagerApi.get_api, routing_key, exchange_id)
-        options = ConnectionOptionsResolver.get_for_broker(ManagerApi.get_api, broker_id)
-        queue_and_options_dict = Dict.put(queue_and_options_dict, {exchange_id, broker_id}, {queue, options})
-        {queue_and_options_dict, queue, options}
-      {queue, options} ->
-        {queue_and_options_dict, queue, options}
-    end    
+  #gets a new list of broker_exchanges ({broker_id, exchange_id} tuples), adding any new publishers to the existing publisher list
+  @spec get_broker_exchanges_and_publishers(HashDict.t) :: {[{Integer.t, Integer.t}], HashDict.t}
+  defp get_broker_exchanges_and_publishers(current_broker_exchange_publishers) do
+    managers = ManagerApi.SystemComponent.list!(ManagerApi.get_api, %{type: "manager"})
+    broker_exchanges = Enum.reduce(managers, [], fn manager, list ->
+                                if has_item(list, {manager.broker_id, manager.messaging_exchange_id}) do
+                                  list
+                                else
+                                  [{manager.broker_id, manager.exchange_id} | list]
+                                end
+                              end)
+    broker_exchange_publishers = Enum.reduce(broker_exchanges, current_broker_exchange_publishers,
+                             fn {broker_id, exchange_id} = key, broker_exchange_publishers ->
+                              if Dict.has_key?(broker_exchange_publishers, key) do
+                                broker_exchange_publishers
+                              else
+                                {:ok, pid} = BrokerExchangePublisher.start_link(broker_id, exchange_id)
+                                Dict.put(broker_exchange_publishers, key, pid)
+                              end
+                             end)
+    {broker_exchanges, broker_exchange_publishers}
   end
+
+  defp has_item(list, item), do: Enum.filter(list, fn list_item -> list_item == item end)
+
 end

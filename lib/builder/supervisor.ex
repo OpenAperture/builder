@@ -7,9 +7,9 @@ defmodule OpenAperture.Builder.Supervisor do
 
   def init(:ok) do
     children = [
-      worker(OpenAperture.Builder.Dispatcher, []),
+      #worker(OpenAperture.Builder.Dispatcher, []),
       worker(OpenAperture.Builder.MessageManager, []),
-      worker(OpenAperture.Builder.BuildLogPublisher, [])
+      #worker(OpenAperture.Builder.BuildLogPublisher, [])
 
     ]
 
