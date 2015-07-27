@@ -93,7 +93,7 @@ defmodule OpenAperture.Builder.Dispatcher do
         what, value   -> 
           Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Caught #{inspect what} with #{inspect value}.  Payload:  #{inspect payload}")
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
-          Logger.error("Error stack trace: " + Exception.format_stacktrace)
+          Logger.error("Error stack trace: #{Exception.format_stacktrace}")
           acknowledge(delivery_tag)
       end      
     end)
