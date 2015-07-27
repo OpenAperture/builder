@@ -2,6 +2,7 @@ require Logger
 
 defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
+  @spec execute(binary, Keyword.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
   def execute(cmd, cmd_opts, callbacks) do
     Task.async(fn -> 
       if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
@@ -15,6 +16,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
     end)
   end
 
+  @spec monitor_shell(Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
   def monitor_shell(shell_process, callbacks) do
     :timer.sleep(1_000)
 
@@ -41,6 +43,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
     end
   end
 
+  @spec check_goon :: nil
   def check_goon do
     path = :os.find_executable('goon')
     cond do

@@ -74,7 +74,7 @@ defmodule OpenAperture.Builder.Docker do
   @doc """
   Method to execute a docker build.
   """
-  @spec build(Docker, term) :: {:ok, String.t()} | {:error, String.t()}
+  @spec build(Docker, Fun) :: {:ok, String.t()} | {:error, String.t()}
   def build(docker, interrupt_handler \\ nil) do
     Logger.info ("Requesting docker build...")
 
@@ -179,10 +179,12 @@ defmodule OpenAperture.Builder.Docker do
     end
   end  
 
+  @spec log_file_from_uuid(String.t) :: String.t
   def log_file_from_uuid uuid do
     "#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker/#{uuid}.log"
   end
 
+  @spec execute_async(Docker.t, String.t, Fun, String.t, String.t)  :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
   def execute_async(docker, docker_cmd, interrupt_handler, stdout_log_uuid \\ UUID.uuid1(), stderr_log_uuid \\ UUID.uuid1()) do
     File.mkdir_p("#{Application.get_env(:openaperture_builder, :tmp_dir)}/docker")
 
