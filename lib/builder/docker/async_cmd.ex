@@ -4,16 +4,14 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
   @spec execute(binary, Keyword.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
   def execute(cmd, cmd_opts, callbacks) do
-    Task.async(fn -> 
-      if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
+    if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
 
-      try do
-        shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
-        monitor_shell(shell_process, callbacks)
-      after
-        if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
-      end
-    end)
+    try do
+      shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
+      monitor_shell(shell_process, callbacks)
+    after
+      if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
+    end
   end
 
   @spec monitor_shell(Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
@@ -45,7 +43,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
   @spec check_goon :: nil
   def check_goon do
-    path = :os.find_executable('goon')
+    path = __MODULE__.find_goon_executable
     cond do
       path == false ->
         raise "Goon driver not found, unable to kill process if needed!"
@@ -53,5 +51,13 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
         raise "Goon driver not correct version, unable to kill process if needed!"
       true -> nil
     end          
+  end
+
+  @doc """
+  Separated so it can be mecked (:os doesn't play nice with meck)
+  """
+  @spec find_goon_executable :: boolean | String.t
+  def find_goon_executable do
+    :os.find_executable('goon')
   end
 end
