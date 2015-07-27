@@ -14,7 +14,8 @@
                        "${project}/_build/dev/lib/httpoison/ebin",
                        "${project}/_build/dev/lib/openaperture_builder/ebin",
                        "${project}/_build/dev/lib/openaperture_messaging/ebin",
-                       "${project}/_build/dev/lib/timex/ebin"]
+                       "${project}/_build/dev/lib/timex/ebin",
+                       "${project}/_build/dev/lib/uuid/ebin"]
             }
         }
     }

@@ -17,39 +17,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
   """
   @spec execute(BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute(request) do
-    {:ok, agent_pid} = Agent.start_link(fn -> request end)
-    task = Task.async(fn ->
-        req = Agent.get(agent_pid, &(&1))
-        tmp = execute_internal(req)
-        Agent.update(agent_pid, fn _ -> :completed end)
-        tmp
-      end)
-    :timer.sleep(1_000)
-    return = monitor_build(agent_pid, task, request)
-    Agent.stop(agent_pid)
-    return
-  end
-
-  @spec monitor_build(pid, Task.t, BuilderRequest.t) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
-  defp monitor_build(agent_pid, task, request) do
-    case Agent.get(agent_pid, &(&1)) do
-      :completed  -> Task.await(task)
-      _ ->
-        case workflow_error?(request) do
-          false ->
-            :timer.sleep(10_000)
-            monitor_build(agent_pid, task, request)
-          true  ->
-            case Agent.get(agent_pid, &(&1)) do
-              :completed  -> Task.await(task)
-              _ ->
-                Process.demonitor(task.ref)
-                Process.unlink(task.pid)
-                Process.exit(task.pid, :kill)
-                {:error, "Workflow is in error state", request}
-            end
-        end
-    end
+    execute_internal(request)
   end
 
   @spec workflow_error?(BuilderRequest.t) :: true | false
@@ -66,7 +34,14 @@ defmodule OpenAperture.Builder.Milestones.Build do
     try do    
       request = BuilderRequest.publish_success_notification(request, "Beginning docker image build of #{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref} on docker host #{request.deployment_repo.docker_repo.docker_host}...")
       request = BuilderRequest.save_workflow(request)
-      case DeploymentRepo.create_docker_image(request.deployment_repo, "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}") do
+      case DeploymentRepo.create_docker_image(
+        request.deployment_repo, 
+        "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}",
+        fn -> 
+          #maybe add a 9-second delay here?
+          workflow_error?(request)
+        end
+      ) do
         {:ok, status_messages, image_found} ->
           request = %{request | image_found: image_found}
           request = Enum.reduce status_messages, request, fn(status_message, request) ->
