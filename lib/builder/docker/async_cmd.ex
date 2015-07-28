@@ -32,7 +32,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
         case Task.await(task) do
           {:error, reason} ->
             Logger.debug("Async Process returned error.")
-            {:error, "Porcelain returned error: #{reason}", shell_process.out, shell_process.err}
+            {:error, "Porcelain returned error: #{reason}"}
           {:ok, result}    ->
             Logger.debug("Async Process returned ok. Result: #{inspect result}")
             case result.status do
