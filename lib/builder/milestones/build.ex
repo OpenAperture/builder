@@ -38,10 +38,10 @@ defmodule OpenAperture.Builder.Milestones.Build do
         request.deployment_repo, 
         "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}",
         fn -> 
-          if workflow_error?(request) do
+          if !workflow_error?(request) do
+            :timer.sleep(9_000)
             true
           else
-            :timer.sleep(9_000)
             false
           end
         end
