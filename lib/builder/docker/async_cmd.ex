@@ -16,15 +16,18 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
   @spec monitor_shell(Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
   def monitor_shell(shell_process, callbacks) do
-    :timer.sleep(1_000)
+    :timer.sleep(5_000)
 
     cond do
       #process has finished normally
-      !Porcelain.Process.alive?(shell_process) -> 
+      !Porcelain.Process.alive?(shell_process) ->
+        Logger.debug("Async Process ended. Awaiting...")
         case Porcelain.Process.await(shell_process) do
           {:error, reason} ->
+            Logger.debug("Async Process returned error.")
             {:error, "Porcelain returned error: #{reason}", shell_process.out, shell_process.err}
           {:ok, result}    ->
+            Logger.debug("Async Process returned ok.")
             case result.status do
               0 -> {:ok, shell_process.out, shell_process.err}
               _ -> {:error, "Nonzero exit from process", shell_process.out, shell_process.err}
@@ -32,14 +35,17 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
         end
       #process is in-progress, but no interrupt check is needed
       callbacks[:on_interrupt] == nil ->
+        Logger.debug("Async Process no interrupt defined, continuing.")
         monitor_shell(shell_process, callbacks)
 
       #process is in-progress and interrupt check was ok
       callbacks[:on_interrupt].() ->
+        Logger.debug("Async Process interrupt passed")
         monitor_shell(shell_process, callbacks)
 
       #process is in-progress and interrupt check failed
       true -> 
+        Logger.debug("Async Process interrupted")
         Porcelain.Process.stop(shell_process)
         {:error, "The process was interrupted!", shell_process.out, shell_process.err}        
     end

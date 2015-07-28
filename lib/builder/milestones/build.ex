@@ -38,8 +38,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
         request.deployment_repo, 
         "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}",
         fn -> 
-          #maybe add a 9-second delay here?
-          workflow_error?(request)
+          !workflow_error?(request)
         end
       ) do
         {:ok, status_messages, image_found} ->
