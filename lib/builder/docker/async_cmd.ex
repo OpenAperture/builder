@@ -21,10 +21,14 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
     cond do
       #process has finished normally
       !Porcelain.Process.alive?(shell_process) -> 
-        {:ok, result} = Porcelain.Process.await(shell_process)
-        case result.status do
-          0 -> {:ok, shell_process.out, shell_process.err}
-          _ -> {:error, "Nonzero exit from process", shell_process.out, shell_process.err}
+        case Porcelain.Process.await(shell_process) do
+          {:error, reason} ->
+            {:error, "Porcelain returned error: #{reason}", shell_process.out, shell_process.err}
+          {:ok, result}    ->
+            case result.status do
+              0 -> {:ok, shell_process.out, shell_process.err}
+              _ -> {:error, "Nonzero exit from process", shell_process.out, shell_process.err}
+            end
         end
       #process is in-progress, but no interrupt check is needed
       callbacks[:on_interrupt] == nil ->
