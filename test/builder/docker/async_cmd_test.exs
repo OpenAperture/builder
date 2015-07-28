@@ -85,7 +85,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmdTest do
     :meck.expect(Porcelain, :spawn_shell, fn _, _ -> %{out: "shellout", err: "shellerr"} end)
     :meck.new(Porcelain.Process)
     :meck.expect(Porcelain.Process, :alive?, fn _ -> true end)
-    :meck.expect(Porcelain.Process, :await, fn _ -> {:ok, %{status: 0}} end)
+    :meck.expect(Porcelain.Process, :await, fn _ -> :timer.sleep(5000); {:ok, %{status: 0}} end)
     :meck.expect(Porcelain.Process, :stop, fn _ -> true end)
 
     {:ok, pid} = Agent.start_link(&HashSet.new/0)

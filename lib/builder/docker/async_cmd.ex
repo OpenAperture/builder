@@ -8,21 +8,28 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
     try do
       shell_process = Porcelain.spawn_shell(cmd, cmd_opts)
-      monitor_shell(shell_process, callbacks)
+      {:ok, agent_pid} = Agent.start_link(fn -> shell_process end)
+      task = Task.async(fn ->
+          proc = Agent.get_and_update(agent_pid, fn p -> {p, nil} end)
+          ret = Porcelain.Process.await(proc)
+          Agent.update(agent_pid, fn _ -> :completed end)
+          ret
+        end)
+      monitor_task(task, agent_pid, shell_process, callbacks)
     after
       if callbacks[:on_completed] != nil, do: callbacks[:on_completed].()
     end
   end
 
-  @spec monitor_shell(Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
-  def monitor_shell(shell_process, callbacks) do
-    :timer.sleep(5_000)
+  @spec monitor_task(Task.t, pid, Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
+  def monitor_task(task, agent_pid, shell_process, callbacks) do
+    :timer.sleep(1_000)
 
     cond do
       #process has finished normally
-      !Porcelain.Process.alive?(shell_process) ->
+      Agent.get(agent_pid, &(&1)) == :completed ->
         Logger.debug("Async Process ended. Awaiting...")
-        case Porcelain.Process.await(shell_process) do
+        case Task.await(task) do
           {:error, reason} ->
             Logger.debug("Async Process returned error.")
             {:error, "Porcelain returned error: #{reason}", shell_process.out, shell_process.err}
@@ -36,12 +43,12 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
       #process is in-progress, but no interrupt check is needed
       callbacks[:on_interrupt] == nil ->
         Logger.debug("Async Process no interrupt defined, continuing.")
-        monitor_shell(shell_process, callbacks)
+        monitor_task(task, agent_pid, shell_process, callbacks)
 
       #process is in-progress and interrupt check was ok
       callbacks[:on_interrupt].() ->
         Logger.debug("Async Process interrupt passed")
-        monitor_shell(shell_process, callbacks)
+        monitor_task(task, agent_pid, shell_process, callbacks)
 
       #process is in-progress and interrupt check failed
       true -> 
