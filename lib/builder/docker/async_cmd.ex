@@ -34,10 +34,10 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
             Logger.debug("Async Process returned error.")
             {:error, "Porcelain returned error: #{reason}", shell_process.out, shell_process.err}
           {:ok, result}    ->
-            Logger.debug("Async Process returned ok.")
+            Logger.debug("Async Process returned ok. Result: #{inspect result}")
             case result.status do
               0 -> {:ok, shell_process.out, shell_process.err}
-              _ -> {:error, "Nonzero exit from process", shell_process.out, shell_process.err}
+              _ -> {:error, "Nonzero exit from process: #{inspect result.status}", shell_process.out, shell_process.err}
             end
         end
       #process is in-progress, but no interrupt check is needed
