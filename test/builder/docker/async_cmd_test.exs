@@ -70,7 +70,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmdTest do
     on_interrupt = fn -> true end
     callbacks = %{on_startup: on_startup, on_completed: on_completed, on_interrupt: on_interrupt}
 
-    {:error, "Nonzero exit from process", out, err} = AsyncCmd.execute("MyCommand", %{}, callbacks)
+    {:error, "Nonzero exit from process: 128", out, err} = AsyncCmd.execute("MyCommand", %{}, callbacks)
     assert out == "shellout"
     assert err == "shellerr"
     state = Agent.get(pid,&(&1))
