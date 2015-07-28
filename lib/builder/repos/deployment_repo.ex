@@ -493,6 +493,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     # attempt to do a docker pull to determine if image already exists (unless force_build is true)
     # Unfortunately it's not possible to browse or search private repos (https://docs.docker.com/docker-hub/repos/#private-repositories),
     # so a pull the only option available
+    Docker.login(repo.docker_repo)
     image_found = false
     if repo.force_build == true do
       requires_build = true
