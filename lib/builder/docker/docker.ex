@@ -81,7 +81,8 @@ defmodule OpenAperture.Builder.Docker do
     result = execute_async(docker, "docker build --force-rm=true --no-cache=true --rm=true -t #{docker.docker_repo_url} .", interrupt_handler, docker.stdout_build_log_uuid, docker.stderr_build_log_uuid)
     case result do  
       {:ok, stdout, stderr} ->
-
+        IO.puts "stdout: "
+        IO.inspect stdout
         # Step 0 : FROM ubuntu
         # ---> 9cbaf023786c
         # ...
