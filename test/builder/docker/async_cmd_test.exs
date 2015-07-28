@@ -47,9 +47,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmdTest do
     on_interrupt = fn -> true end
     callbacks = %{on_startup: on_startup, on_completed: on_completed, on_interrupt: on_interrupt}
 
-    {:ok, out, err} = AsyncCmd.execute("MyCommand", %{}, callbacks)
-    assert out == "shellout"
-    assert err == "shellerr"
+    :ok = AsyncCmd.execute("MyCommand", %{}, callbacks)
     state = Agent.get(pid,&(&1))
     assert HashSet.member?(state, :on_startup)
     assert HashSet.member?(state, :on_completed)
@@ -70,9 +68,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmdTest do
     on_interrupt = fn -> true end
     callbacks = %{on_startup: on_startup, on_completed: on_completed, on_interrupt: on_interrupt}
 
-    {:error, "Nonzero exit from process: 128", out, err} = AsyncCmd.execute("MyCommand", %{}, callbacks)
-    assert out == "shellout"
-    assert err == "shellerr"
+    {:error, "Nonzero exit from process: 128"} = AsyncCmd.execute("MyCommand", %{}, callbacks)
     state = Agent.get(pid,&(&1))
     assert HashSet.member?(state, :on_startup)
     assert HashSet.member?(state, :on_completed)
@@ -94,9 +90,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmdTest do
     on_interrupt = fn -> false end
     callbacks = %{on_startup: on_startup, on_completed: on_completed, on_interrupt: on_interrupt}
 
-    {:error, "The process was interrupted!", out, err} = AsyncCmd.execute("MyCommand", %{}, callbacks)
-    assert out == "shellout"
-    assert err == "shellerr"
+    {:error, "The process was interrupted!"} = AsyncCmd.execute("MyCommand", %{}, callbacks)
     state = Agent.get(pid,&(&1))
     assert HashSet.member?(state, :on_startup)
     assert HashSet.member?(state, :on_completed)

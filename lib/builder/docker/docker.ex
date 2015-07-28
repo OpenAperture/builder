@@ -199,15 +199,32 @@ defmodule OpenAperture.Builder.Docker do
         File.mkdir_p(output_dir)
         [dir: output_dir]
     end
-    AsyncCmd.execute(resolved_cmd, opts, %{
+    cmd_ret = AsyncCmd.execute(resolved_cmd, opts, %{
       on_startup: fn -> 
         Logger.debug ("Executing Docker command:  #{resolved_cmd}")
       end,
-      on_completed: fn ->
-        File.rm_rf(stdout_file)
-        File.rm_rf(stderr_file)        
+      on_completed: fn ->      
       end,
       on_interrupt: interrupt_handler
-      })    
+      })
+    out_text = read_output_file(stdout_file)
+    err_text = read_output_file(stderr_file)
+    File.rm_rf(stdout_file)
+    File.rm_rf(stderr_file)  
+    case cmd_ret do
+      {:error, reason} -> {:error, reason, out_text, err_text}
+      :ok -> {:ok, out_text, err_text}
+    end
+  end
+
+  @doc false
+  # Method to read in a file and return contents
+  @spec read_output_file(String.t()) :: String.t()
+  defp read_output_file(docker_output_file) do
+    if File.exists?(docker_output_file) do
+      File.read!(docker_output_file)
+    else
+      raise "Unable to read docker output file #{docker_output_file} - file does not exist!"
+    end
   end
 end

@@ -2,7 +2,7 @@ require Logger
 
 defmodule OpenAperture.Builder.Docker.AsyncCmd do
 
-  @spec execute(binary, Keyword.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
+  @spec execute(binary, Keyword.t, Keyword.t) :: :ok | {:error, String.t}
   def execute(cmd, cmd_opts, callbacks) do
     if callbacks[:on_startup] != nil, do: callbacks[:on_startup].()
 
@@ -21,7 +21,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
     end
   end
 
-  @spec monitor_task(Task.t, pid, Porcelain.Process.t, Keyword.t) :: {:ok, String.t, String.t} | {:error, String.t, String.t, String.t}
+  @spec monitor_task(Task.t, pid, Porcelain.Process.t, Keyword.t) :: :ok | {:error, String.t}
   def monitor_task(task, agent_pid, shell_process, callbacks) do
     :timer.sleep(1_000)
 
@@ -36,8 +36,8 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
           {:ok, result}    ->
             Logger.debug("Async Process returned ok. Result: #{inspect result}")
             case result.status do
-              0 -> {:ok, shell_process.out, shell_process.err}
-              _ -> {:error, "Nonzero exit from process: #{inspect result.status}", shell_process.out, shell_process.err}
+              0 -> :ok
+              _ -> {:error, "Nonzero exit from process: #{inspect result.status}"}
             end
         end
       #process is in-progress, but no interrupt check is needed
@@ -54,7 +54,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
       true -> 
         Logger.debug("Async Process interrupted")
         Porcelain.Process.stop(shell_process)
-        {:error, "The process was interrupted!", shell_process.out, shell_process.err}        
+        {:error, "The process was interrupted!"}        
     end
   end
 
