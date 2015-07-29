@@ -9,7 +9,7 @@ defmodule OpenAperture.Builder.Supervisor do
     children = [
       #worker(OpenAperture.Builder.Dispatcher, []),
       worker(OpenAperture.Builder.MessageManager, []),
-      #worker(OpenAperture.Builder.BuildLogPublisher, [])
+      worker(OpenAperture.Builder.BuildLogPublisher, [])
 
     ]
 

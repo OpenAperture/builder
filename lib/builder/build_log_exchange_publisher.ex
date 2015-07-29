@@ -1,15 +1,18 @@
-defmodule OpenAperture.Builder.BuildLogPublisher.BrokerExchangePublisher do
+defmodule OpenAperture.Builder.BuildLogPublisher.ExchangePublisher do
   use GenServer
 
   @connection_options nil
   use OpenAperture.Messaging
 
+  alias OpenAperture.Messaging.ConnectionOptionsResolver
   alias OpenAperture.Messaging.AMQP.ConnectionOptions
   alias OpenAperture.Messaging.AMQP.Queue
+  alias OpenAperture.Messaging.AMQP.QueueBuilder
+  alias OpenAperture.ManagerApi
 
-  @spec start_link(Integer.t, Integer.t) :: GenServer.on_start
-  def start_link(broker_id, exchange_id) do
-    GenServer.start_link(__MODULE__, {broker_id, exchange_id})
+  @spec start_link(Integer.t) :: GenServer.on_start
+  def start_link(exchange_id) do
+    GenServer.start_link(__MODULE__, exchange_id)
   end
 
   @spec publish_build_logs(pid, String.t, [String.t]) :: :ok
@@ -17,10 +20,13 @@ defmodule OpenAperture.Builder.BuildLogPublisher.BrokerExchangePublisher do
     GenServer.cast(pid, {:publish, workflow_id, logs})
   end
 
-  @spec init({Integer.t, Integer.t}) :: {:ok, {Queue.t, ConnectionOptions.t}}
-  def init({broker_id, exchange_id}) do
+  @spec init(Integer.t) :: {:ok, {Queue.t, ConnectionOptions.t}}
+  def init(exchange_id) do
     queue = QueueBuilder.build(ManagerApi.get_api, "build_logs", exchange_id)
-    options = ConnectionOptionsResolver.get_for_broker(ManagerApi.get_api, broker_id)
+    options = ConnectionOptionsResolver.resolve(ManagerApi.get_api,
+                                                Application.get_env(:openaperture_builder, :broker_id),
+                                                Application.get_env(:openaperture_builder, :exchange_id),
+                                                exchange_id)
     {:ok, {queue, options}}
   end
 

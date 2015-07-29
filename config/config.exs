@@ -20,7 +20,9 @@ config :openaperture_builder,
 	docker_registry_url: System.get_env("DOCKER_REGISTRY_URL") || "https://index.docker.io/v1/",
 	docker_registry_username: System.get_env("DOCKER_REGISTRY_USERNAME"),
 	docker_registry_email: System.get_env("DOCKER_REGISTRY_EMAIL"),
-	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD")
+	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD"),
+  exchange_id: System.get_env("EXCHANGE_ID"),
+  broker_id: System.get_env("BROKER_ID")
 
 
 config :openaperture_manager_api,
