@@ -34,7 +34,7 @@ defmodule OpenAperture.Builder.Docker.AsyncCmd do
             Logger.debug("Async Process returned error.")
             {:error, "Porcelain returned error: #{reason}"}
           {:ok, result}    ->
-            Logger.debug("Async Process returned ok. Result: #{inspect result}")
+            Logger.debug("Async Process returned with status code #{inspect result.status}")
             case result.status do
               0 -> :ok
               _ -> {:error, "Nonzero exit from process: #{inspect result.status}"}
