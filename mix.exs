@@ -20,7 +20,7 @@ defmodule OpenAperture.Builder.Mixfile do
         :openaperture_manager_api, 
         :openaperture_fleet, 
         :openaperture_workflow_orchestrator_api,
-        #:openaperture_overseer_api
+        :openaperture_overseer_api
       ]
     ]
   end
