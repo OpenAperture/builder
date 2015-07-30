@@ -54,7 +54,7 @@ defmodule OpenAperture.Builder.Docker do
     Logger.debug ("Executing docker cache cleanup commands...")
     try do
       Logger.debug ("Cleaning up exited containers...")
-      case execute_async(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host}  docker ps -f status=exited -q)", nil) do
+      case execute_async(docker, "docker rm $(DOCKER_HOST=#{docker.docker_host}  docker ps -f status=exited -q) ; exit 0", nil) do
         {:ok, result, docker_output} -> Logger.debug ("Successfully cleaned up exited containers:\n#{result}\n\nDocker Tag Output:  #{docker_output}")
         {:error, reason, stdout, stderr} -> Logger.error("Failed to clean up exited containers:  #{inspect reason}\n\nStandard Out:\n#{stdout}\n\nStandard Error:\n#{stderr}")
       end
