@@ -91,8 +91,6 @@ defmodule OpenAperture.Builder.Milestones.Build do
   defp notify_build_log(msg_list, request) do
     Enum.each(msg_list, &Logger.debug("Docker Build Tail (#{length(msg_list)}): #{&1}"))
     BuildLogPublisher.publish_build_logs(request.workflow.workflow_id,
-                                         msg_list,
-                                         request.orchestrator_request.workflow_orchestration_exchange_id,
-                                         request.orchestrator_request.workflow_orchestration_broker_id)
+                                         msg_list)
   end
 end
