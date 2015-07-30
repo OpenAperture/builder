@@ -5,6 +5,7 @@ defmodule OpenAperture.Builder.Milestones.Build do
   alias OpenAperture.Builder.DeploymentRepo
   alias OpenAperture.Builder.Request, as: BuilderRequest
   alias OpenAperture.Builder.Docker
+  alias OpenAperture.Builder.BuildLogPublisher
 
   @moduledoc """
   This module contains the logic for the "Build" Workflow milestone
@@ -65,12 +66,14 @@ defmodule OpenAperture.Builder.Milestones.Build do
     end
   end
 
+  @spec start_build_output_monitor(BuilderRequest.t) :: BuilderRequest.t
   defp start_build_output_monitor(request) do
-    {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1))
-    {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1))
+    {:ok, stdout_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stdout_build_log_uuid), &notify_build_log(&1, request))
+    {:ok, stderr_pid} = Tail.start_link(Docker.log_file_from_uuid(request.deployment_repo.docker_repo.stderr_build_log_uuid), &notify_build_log(&1, request))
     %{request | stdout_build_log_tail_pid: stdout_pid, stderr_build_log_tail_pid: stderr_pid}
   end
 
+  @spec end_build_output_monitor(BuilderRequest.t) :: term
   defp end_build_output_monitor(request) do
     if request.stdout_build_log_tail_pid != nil do
       Tail.stop(request.stdout_build_log_tail_pid)
@@ -84,7 +87,12 @@ defmodule OpenAperture.Builder.Milestones.Build do
     end
   end
 
-  defp notify_build_log(msg_list) do
-    Enum.each(msg_list, &Logger.info("Docker Build Tail (#{length(msg_list)}): #{&1}"))
+  @spec notify_build_log([String.t], BuilderRequest.t) :: term
+  defp notify_build_log(msg_list, request) do
+    Enum.each(msg_list, &Logger.debug("Docker Build Tail (#{length(msg_list)}): #{&1}"))
+    BuildLogPublisher.publish_build_logs(request.workflow.workflow_id,
+                                         msg_list,
+                                         request.orchestrator_request.workflow_orchestration_exchange_id,
+                                         request.orchestrator_request.workflow_orchestration_broker_id)
   end
 end

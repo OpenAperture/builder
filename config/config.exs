@@ -20,7 +20,16 @@ config :openaperture_builder,
 	docker_registry_url: System.get_env("DOCKER_REGISTRY_URL") || "https://index.docker.io/v1/",
 	docker_registry_username: System.get_env("DOCKER_REGISTRY_USERNAME"),
 	docker_registry_email: System.get_env("DOCKER_REGISTRY_EMAIL"),
-	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD")
+	docker_registry_password: System.get_env("DOCKER_REGISTRY_PASSWORD"),
+  exchange_id: System.get_env("EXCHANGE_ID"),
+  broker_id: System.get_env("BROKER_ID")
+
+
+config :openaperture_manager_api,
+	manager_url: System.get_env("MANAGER_URL"),
+	oauth_login_url: System.get_env("OAUTH_LOGIN_URL"),
+	oauth_client_id: System.get_env("OAUTH_CLIENT_ID"),
+	oauth_client_secret: System.get_env("OAUTH_CLIENT_SECRET")
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
