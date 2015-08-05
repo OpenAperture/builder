@@ -12,9 +12,11 @@ defmodule OpenAperture.Builder.Request do
 	  				delivery_tag: nil,
             image_found: false,
             stdout_build_log_tail_pid: nil,
-            stderr_build_log_tail_pid: nil
+            stderr_build_log_tail_pid: nil,
+            last_total_duration_warning: nil
 
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{orchestrator_request: OpenAperture.WorkflowOrchestratorApi.Request.t,
+                         workflow: OpenAperture.WorkflowOrchestratorApi.Workflow.t}
 
   @doc """
   Method to convert a map into a Request struct

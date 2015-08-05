@@ -15,7 +15,8 @@ config :openaperture_builder,
 	docker_registry_email: "user@test.com",
 	docker_registry_password: "pass",
 	skip_goon_check: true,
-	build_log_publisher_autostart: false
+	build_log_publisher_autostart: false,
+	milestone_monitor_sleep_seconds: 1
 
 config :openaperture_overseer_api,
 	module_type: :test,

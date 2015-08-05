@@ -1,5 +1,6 @@
 defmodule OpenAperture.Builder.DispatcherTest do
   use ExUnit.Case
+  use Timex
 
   alias OpenAperture.Builder.Dispatcher
 
@@ -110,7 +111,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        workflow_start_time: Date.now()
       }
     }
     Dispatcher.execute_milestone(:completed, {:ok, request})
@@ -126,7 +128,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        workflow_start_time: Date.now()
       }
     }
 
@@ -161,7 +164,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        workflow_start_time: Date.now()
       }
     }
 
@@ -185,7 +189,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: :build
+        current_step: :build,
+        workflow_start_time: Date.now()
       }
     }
 
@@ -225,7 +230,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: :build
+        current_step: :build,
+        workflow_start_time: Date.now()
       }
     }
 
@@ -248,7 +254,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        workflow_start_time: Date.now()
       }
     }
 
@@ -269,7 +276,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        current_step: :build
+        current_step: :build,
+        workflow_start_time: Date.now()
       }
     }
 
@@ -319,7 +327,8 @@ defmodule OpenAperture.Builder.DispatcherTest do
     		etcd_token: "123abc"
     	},
       workflow: %Workflow{
-        id: "123"
+        id: "123",
+        workflow_start_time: Date.now()
       }
     }
 
