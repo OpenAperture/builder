@@ -17,7 +17,7 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
         Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Completed milestone")
         Agent.update(completed_agent_pid, fn _ -> ret end)
     end)
-    monitor_internal(completed_agent_pid, builder_request, current_milestone, Date.now())
+    monitor_internal(completed_agent_pid, builder_request, current_milestone, Time.now())
   end
 
   defp monitor_internal(completed_agent_pid, builder_request, current_milestone, last_alert) do
@@ -30,19 +30,19 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
           else
             builder_request.last_total_duration_warning
           end
-          |> Date.diff(Date.now(), :mins)
-        workflow_duration = Date.diff(builder_request.workflow.workflow_start_time, Date.now(), :mins)
+          |> Time.diff(Time.now(), :mins)
+        workflow_duration = Time.diff(builder_request.workflow.workflow_start_time, Time.now(), :mins)
         if time_since_last_build_duration_warning >= 25 do
           Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone has been processing for #{time_since_last_build_duration_warning} minutes")
           orchestrator_request = OrchestratorWorkflow.publish_failure_notification(builder_request.orchestrator_request, "Warning: Builder request running for #{workflow_duration} minutes (current milestone: #{current_milestone})")
-          builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow, last_total_duration_warning: Date.now()}
+          builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow, last_total_duration_warning: Time.now()}
         end
-        time_since_last_step_duration_warning = Date.diff(last_alert, Date.now(), :mins)
+        time_since_last_step_duration_warning = Time.diff(last_alert, Time.now(), :mins)
         if time_since_last_step_duration_warning >= 15 do
           Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone has been processing for #{time_since_last_build_duration_warning} minutes")
           orchestrator_request = OrchestratorWorkflow.publish_failure_notification(builder_request.orchestrator_request, "Warning: Builder request #{current_milestone} milestone running for #{ time_since_last_step_duration_warning} minutes. Total workflow duration: #{workflow_duration} minutes.")
           builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
-          last_alert = Date.now()
+          last_alert = Time.now()
         end  
 
         monitor_internal(completed_agent_pid, builder_request, current_milestone, last_alert)

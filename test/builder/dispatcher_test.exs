@@ -112,7 +112,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
     Dispatcher.execute_milestone(:completed, {:ok, request})
@@ -129,7 +129,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -165,7 +165,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -190,7 +190,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
       workflow: %Workflow{
         id: "123",
         current_step: :build,
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -231,7 +231,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
       workflow: %Workflow{
         id: "123",
         current_step: :build,
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -255,7 +255,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -277,7 +277,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
       workflow: %Workflow{
         id: "123",
         current_step: :build,
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
@@ -328,7 +328,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
     	},
       workflow: %Workflow{
         id: "123",
-        workflow_start_time: Date.now()
+        workflow_start_time: Time.now()
       }
     }
 
