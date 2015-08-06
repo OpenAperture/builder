@@ -16,6 +16,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   alias OpenAperture.Builder.Milestones.Build, as: BuildMilestone
   alias OpenAperture.Builder.Milestones.VerifyBuildExists, as: VerifyBuildExistsMilestone
 
+  alias OpenAperture.Builder.MilestoneMonitor, as: Monitor
+
   @moduledoc """
   This module contains the logic to dispatch Builder messsages to the appropriate GenServer(s) 
   """  
@@ -165,7 +167,9 @@ defmodule OpenAperture.Builder.Dispatcher do
     end
     case next_milestone do
       :error -> Workflow.step_failed(request.orchestrator_request, "Unknown next step: #{request.workflow.current_step}", "")
-      _      -> execute_milestone(next_milestone, ConfigMilestone.execute(request))
+      _      ->
+        request = Monitor.monitor(request, :config, fn -> ConfigMilestone.execute(request) end)
+        execute_milestone(next_milestone, request)
     end
   end
 
@@ -183,7 +187,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   @spec execute_milestone(:build, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:build, {:ok, request}) do
     Logger.debug("Executing :build milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
-    execute_milestone(:verify_build_exists, BuildMilestone.execute(request))
+    request = Monitor.monitor(request, :build, fn -> BuildMilestone.execute(request) end)
+    execute_milestone(:verify_build_exists, request)
   end
 
   @doc """
@@ -200,7 +205,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   @spec execute_milestone(:verify_build_exists, {:ok, BuilderRequest.t}) :: {:ok, BuilderRequest.t} | {:error, String.t, BuilderRequest.t}
   def execute_milestone(:verify_build_exists, {:ok, request}) do
     Logger.debug("Executing :verify_build_exists milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
-    execute_milestone(:completed, VerifyBuildExistsMilestone.execute(request))
+    request = Monitor.monitor(request, :verify_build_exists, fn -> VerifyBuildExistsMilestone.execute(request) end)
+    execute_milestone(:completed, request)
   end
 
   @doc """
