@@ -13,6 +13,8 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExists do
       _    ->
         tag = "#{request.deployment_repo.docker_repo_name}:#{request.workflow.source_repo_git_ref}"
         Logger.debug("[VerifyBuildExists] Image exists, clearing tag #{tag}...")
+
+        Docker.login(request.deployment_repo.docker_repo)
       	:ok = Docker.cleanup_image_cache(request.deployment_repo.docker_repo, tag)
       	case Docker.pull(request.deployment_repo.docker_repo, tag) do
           :ok -> 

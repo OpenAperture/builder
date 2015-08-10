@@ -12,6 +12,7 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExistsTest do
   	request = %BuilderRequest{workflow: %Workflow{}, orchestrator_request: %OrchestratorRequest{workflow: %Workflow{}}, deployment_repo: %DeploymentRepo{docker_repo: %Docker{}}}
   	:meck.new(Docker, [:passthrough])
   	:meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
+    :meck.expect(Docker, :login, fn _ -> :ok end)
   	:meck.expect(Docker, :pull, fn _,_ -> :ok end)
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :add_event_to_log, fn req, msg -> req end)
@@ -26,6 +27,7 @@ defmodule OpenAperture.Builder.Milestones.VerifyBuildExistsTest do
   	request = %BuilderRequest{workflow: %Workflow{}, orchestrator_request: %OrchestratorRequest{workflow: %Workflow{}}, deployment_repo: %DeploymentRepo{docker_repo: %Docker{}}}
   	:meck.new(Docker, [:passthrough])
   	:meck.expect(Docker, :cleanup_image_cache, fn _,_ -> :ok end)
+    :meck.expect(Docker, :login, fn _ -> :ok end)
   	:meck.expect(Docker, :pull, fn _,_ -> {:error, "bad news bears"} end)
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :add_event_to_log, fn req, msg -> req end)
