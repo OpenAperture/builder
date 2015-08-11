@@ -11,6 +11,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   alias OpenAperture.Builder.Configuration
 
   alias OpenAperture.ManagerApi
+  alias OpenAperture.ManagerApi.SystemEvent
 
   alias OpenAperture.Builder.Milestones.Config, as: ConfigMilestone
   alias OpenAperture.Builder.Milestones.Build, as: BuildMilestone
@@ -84,18 +85,54 @@ defmodule OpenAperture.Builder.Dispatcher do
         builder_request = BuilderRequest.save_workflow(builder_request)
         process_request(builder_request)
       catch
-        :exit, code   -> 
-          Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Exited with code #{inspect code}.  Payload:  #{inspect payload}")
+        :exit, code   ->
+          error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Exited with code #{inspect code}.  Payload:  #{inspect payload}" 
+          Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Exited with code #{inspect code}")
+          event = %{
+          type: :unhandled_exception, 
+            severity: :error, 
+            data: %{
+              component: :builder,
+              exchange_id: Configuration.get_current_exchange_id,
+              hostname: System.get_env("HOSTNAME")
+            },
+            message: error_msg
+          }       
+          SystemEvent.create_system_event!(ManagerApi.get_api, event)              
           acknowledge(delivery_tag)
         :throw, value -> 
-          Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Throw called with #{inspect value}.  Payload:  #{inspect payload}")
+          error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Throw called with #{inspect value}.  Payload:  #{inspect payload}"
+          Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Throw called with #{inspect value}")
+          event = %{
+          type: :unhandled_exception, 
+            severity: :error, 
+            data: %{
+              component: :builder,
+              exchange_id: Configuration.get_current_exchange_id,
+              hostname: System.get_env("HOSTNAME")
+            },
+            message: error_msg
+          }       
+          SystemEvent.create_system_event!(ManagerApi.get_api, event)  
           acknowledge(delivery_tag)
         what, value   -> 
-          Logger.error("Message #{delivery_tag} (workflow #{payload[:id]}) Caught #{inspect what} with #{inspect value}.  Payload:  #{inspect payload}")
+          error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Caught #{inspect what} with #{inspect value}.  Payload:  #{inspect payload}"
+          Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
           Logger.error("Error stack trace: #{Exception.format_stacktrace}")
+          event = %{
+          type: :unhandled_exception, 
+            severity: :error, 
+            data: %{
+              component: :builder,
+              exchange_id: Configuration.get_current_exchange_id,
+              hostname: System.get_env("HOSTNAME")
+            },
+            message: error_msg
+          }       
+          SystemEvent.create_system_event!(ManagerApi.get_api, event)            
           acknowledge(delivery_tag)
       end      
     end)
