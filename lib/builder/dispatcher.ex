@@ -90,7 +90,8 @@ defmodule OpenAperture.Builder.Dispatcher do
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Exited with code #{inspect code}")
           event = %{
-          type: :unhandled_exception, 
+            unique: true,
+            type: :unhandled_exception, 
             severity: :error, 
             data: %{
               component: :builder,
@@ -106,7 +107,8 @@ defmodule OpenAperture.Builder.Dispatcher do
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Throw called with #{inspect value}")
           event = %{
-          type: :unhandled_exception, 
+            unique: true,
+            type: :unhandled_exception, 
             severity: :error, 
             data: %{
               component: :builder,
@@ -123,7 +125,8 @@ defmodule OpenAperture.Builder.Dispatcher do
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
           Logger.error("Error stack trace: #{Exception.format_stacktrace}")
           event = %{
-          type: :unhandled_exception, 
+            unique: true,
+            type: :unhandled_exception, 
             severity: :error, 
             data: %{
               component: :builder,
