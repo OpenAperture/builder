@@ -272,10 +272,10 @@ defmodule OpenAperture.Builder.Dispatcher do
 
   defp make_event(error_msg) do
     data = %{
-        component:   :builder,
-        exchange_id: Configuration.get_current_exchange_id,
-        hostname:    System.get_env("HOSTNAME")
-      },
+      component:   :builder,
+      exchange_id: Configuration.get_current_exchange_id,
+      hostname:    System.get_env("HOSTNAME")
+    }
     event = %{
       unique:   true,
       type:     :unhandled_exception,
