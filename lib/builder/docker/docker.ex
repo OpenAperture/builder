@@ -30,21 +30,21 @@ defmodule OpenAperture.Builder.Docker do
   @spec init(Docker) :: {:ok, Docker} | {:error, String.t()}
   def init(docker) do
     cond do
-      empty(docker.docker_repo_url)   -> {:error, "Missing docker_repo_url"}
-      empty(docker.docker_host)       -> {:error, "Missing docker_host"}
-      empty(docker.output_dir)        -> {:error, "Missing output_dir"}
-      empty(docker.registry_url)      -> {:error, "Missing registry_url"}
-      empty(docker.registry_username) -> {:error, "Missing registry_username"}
-      empty(docker.registry_email)    -> {:error, "Missing registry_email"}
-      empty(docker.registry_password) -> {:error, "Missing registry_password"}
+      empty?(docker.docker_repo_url)   -> {:error, "Missing docker_repo_url"}
+      empty?(docker.docker_host)       -> {:error, "Missing docker_host"}
+      empty?(docker.output_dir)        -> {:error, "Missing output_dir"}
+      empty?(docker.registry_url)      -> {:error, "Missing registry_url"}
+      empty?(docker.registry_username) -> {:error, "Missing registry_username"}
+      empty?(docker.registry_email)    -> {:error, "Missing registry_email"}
+      empty?(docker.registry_password) -> {:error, "Missing registry_password"}
       true -> {:ok, docker}
     end
   end
 
-  @spec empty(String.t()) :: Boolean
-  defp empty(nil), do: true
-  defp empty(""),  do: true
-  defp empty(_),   do: false
+  @spec empty?(String.t()) :: Boolean
+  defp empty?(nil), do: true
+  defp empty?(""),  do: true
+  defp empty?(_),   do: false
 
   @doc """
   Method to cleanup any cache associated with an image id
