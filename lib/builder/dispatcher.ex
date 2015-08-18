@@ -18,6 +18,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   alias OpenAperture.Builder.Milestones.VerifyBuildExists, as: VerifyBuildExistsMilestone
 
   alias OpenAperture.Builder.MilestoneMonitor, as: Monitor
+  alias OpenAperture.WorkflowOrchestratorApi.Request, as: OrchestratorRequest
 
   @moduledoc """
   This module contains the logic to dispatch Builder messsages to the appropriate GenServer(s) 
@@ -282,10 +283,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   defp make_event(error_msg), do: %{@event | message: error_msg}
 
   #gather all of the required info from the BuilderRequest
+  @spec make_orchestrator_request(BuilderRequest.t) :: OrchestratorRequest.t
   defp make_orchestrator_request(request) do
-    orchestrator_request = request.orchestrator_request
-    orchestrator_request = %{orchestrator_request | etcd_token:       request.deployment_repo.etcd_token}
-    orchestrator_request = %{orchestrator_request | deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
-    orchestrator_request
-  end
+    %{request.orchestrator_request | etcd_token:       request.deployment_repo.etcd_token,
+                                     deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
 end
