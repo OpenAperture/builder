@@ -2,7 +2,7 @@ require Logger
 
 defmodule OpenAperture.Builder.DeploymentRepo do
 
-  alias OpenAperture.WorkflowOrchestratorApi.Workflow, as: Workflow
+  alias OpenAperture.WorkflowOrchestratorApi.Workflow
   alias OpenAperture.WorkflowOrchestratorApi.Request
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.DockerHosts
