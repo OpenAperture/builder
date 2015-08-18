@@ -192,17 +192,14 @@ defmodule OpenAperture.Builder.Docker do
     resolved_cmd = "DOCKER_HOST=#{docker.docker_host} #{docker_cmd} 2> #{stderr_file} > #{stdout_file}"
 
     opts = case docker.output_dir do
-      nil -> []
-      output_dir   ->
+      nil         -> []
+      output_dir  ->
         File.mkdir_p(output_dir)
         [dir: output_dir]
     end
     cmd_ret = AsyncCmd.execute(resolved_cmd, opts, %{
-      on_startup: fn -> 
-        Logger.debug ("Executing Docker command:  #{resolved_cmd}")
-      end,
-      on_completed: fn ->      
-      end,
+      on_startup:   fn -> Logger.debug ("Executing Docker command:  #{resolved_cmd}") end,
+      on_completed: fn -> end,
       on_interrupt: interrupt_handler
       })
     out_text = read_output_file(stdout_file)
