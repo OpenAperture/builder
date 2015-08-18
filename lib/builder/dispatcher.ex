@@ -247,14 +247,6 @@ defmodule OpenAperture.Builder.Dispatcher do
     Workflow.step_completed(orchestrator_request)
   end  
 
-  #gather all of the required info from the BuilderRequest
-  defp make_orchestrator_request(request) do
-    orchestrator_request = request.orchestrator_request
-    orchestrator_request = %{orchestrator_request | etcd_token:       request.deployment_repo.etcd_token}
-    orchestrator_request = %{orchestrator_request | deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
-    orchestrator_request
-  end
-
   @doc """
   Method to acknowledge a message has been processed
 
@@ -288,4 +280,12 @@ defmodule OpenAperture.Builder.Dispatcher do
   end
 
   defp make_event(error_msg), do: %{@event | message: error_msg}
+
+  #gather all of the required info from the BuilderRequest
+  defp make_orchestrator_request(request) do
+    orchestrator_request = request.orchestrator_request
+    orchestrator_request = %{orchestrator_request | etcd_token:       request.deployment_repo.etcd_token}
+    orchestrator_request = %{orchestrator_request | deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
+    orchestrator_request
+  end
 end
