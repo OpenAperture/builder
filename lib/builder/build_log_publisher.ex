@@ -19,11 +19,11 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
   @spec start_link() :: GenServer.on_start
 	def start_link() do
     if (Application.get_env(:openaperture_builder, :build_log_publisher_autostart, true)) do
-		  GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
+      GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
     else
       Agent.start_link(fn -> false end)
     end
-	end
+  end
 
   @spec init(:ok) :: {:ok, {Timestamp.t, [{Integer.t, Integer.t}], HashDict.t}}
 	def init(:ok) do
