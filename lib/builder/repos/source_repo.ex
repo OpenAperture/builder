@@ -75,6 +75,8 @@ defmodule OpenAperture.Builder.SourceRepo do
   def cleanup(repo) do
     if output_dir_content?(repo), do: File.rm_rf(repo.output_dir)
   end
+
+  @spec output_dir_content?(OpenAperture.Builder.SourceRepo.t) :: boolean
   defp output_dir_content?(repo) do
     (repo.output_dir != nil && String.length(repo.output_dir) > 0)
   end
