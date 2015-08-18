@@ -37,6 +37,7 @@ defmodule OpenAperture.Builder.Dispatcher do
                 type:     :unhandled_exception,
                 severity: :error,
                 data:     @event_data,
+                message:  nil
               }
   @doc """
   Specific start_link implementation (required by the supervisor)
@@ -282,7 +283,5 @@ defmodule OpenAperture.Builder.Dispatcher do
     end
   end
 
-  defp make_event(error_msg) do
-    Dict.merge(@event, %{ message: error_msg})
-  end
+  defp make_event(error_msg), do: %{@event | message: error_msg}
 end
