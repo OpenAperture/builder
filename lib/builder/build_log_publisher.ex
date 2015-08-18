@@ -18,10 +18,9 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
 
   @spec start_link() :: GenServer.on_start
 	def start_link() do
-    if (Application.get_env(:openaperture_builder, :build_log_publisher_autostart, true)) do
-      GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
-    else
-      Agent.start_link(fn -> false end)
+    case (Application.get_env(:openaperture_builder, :build_log_publisher_autostart, true)) do
+      true -> GenServer.start_link(__MODULE__, :ok, [name: __MODULE__])
+      _    -> Agent.start_link(fn -> false end)
     end
   end
 
