@@ -26,6 +26,18 @@ defmodule OpenAperture.Builder.Dispatcher do
   @connection_options nil
   use OpenAperture.Messaging  
 
+  @event_data %{
+                component:   :builder,
+                exchange_id: Configuration.get_current_exchange_id,
+                hostname:    System.get_env("HOSTNAME")
+              }
+
+  @event      %{
+                unique:   true,
+                type:     :unhandled_exception,
+                severity: :error,
+                data:     @event_data,
+              }
   @doc """
   Specific start_link implementation (required by the supervisor)
 
@@ -270,21 +282,7 @@ defmodule OpenAperture.Builder.Dispatcher do
     end
   end
 
-  defp make_data do
-    %{
-      component:   :builder,
-      exchange_id: Configuration.get_current_exchange_id,
-      hostname:    System.get_env("HOSTNAME")
-    }
-  end
-
   defp make_event(error_msg) do
-    %{
-      unique:   true,
-      type:     :unhandled_exception,
-      severity: :error,
-      data:     make_data,
-      message:  error_msg
-    }
+    Dict.merge(@event, %{ message: error_msg})
   end
 end
