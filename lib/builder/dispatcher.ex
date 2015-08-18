@@ -280,7 +280,7 @@ defmodule OpenAperture.Builder.Dispatcher do
     end
   end
 
-  @spec make_event(String.t) :: OpenAperture.ManagerApi.SystemEvent
+  @spec make_event(String.t) :: map
   defp make_event(error_msg), do: %{@event | message: error_msg}
 
   #gather all of the required info from the BuilderRequest
