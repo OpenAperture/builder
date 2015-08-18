@@ -53,5 +53,5 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
     end
   end
 
-  defp too_long?(type, time) do: time >= @max_duration_warn_time[type]
+  defp too_long?(type, time), do: time >= @max_duration_warn_time[type]
 end
