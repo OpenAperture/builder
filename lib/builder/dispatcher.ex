@@ -287,4 +287,5 @@ defmodule OpenAperture.Builder.Dispatcher do
   defp make_orchestrator_request(request) do
     %{request.orchestrator_request | etcd_token:       request.deployment_repo.etcd_token,
                                      deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
+  end
 end
