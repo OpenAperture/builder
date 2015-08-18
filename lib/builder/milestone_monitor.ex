@@ -28,10 +28,9 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
       nil ->
         Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone not completed, sleeping...")
         :timer.sleep(Application.get_env(:openaperture_builder, :milestone_monitor_sleep_seconds, 10) * 1_000)
-        time_since_last_build_duration_warning = if builder_request.last_total_duration_warning == nil do
-            builder_request.workflow.workflow_start_time
-          else
-            builder_request.last_total_duration_warning
+        time_since_last_build_duration_warning = case builder_request.last_total_duration_warning do
+            nil -> builder_request.workflow.workflow_start_time
+            _   -> builder_request.last_total_duration_warning
           end
           |> Time.diff(Time.now(), :mins)
         workflow_duration = Time.diff(builder_request.workflow.workflow_start_time, Time.now(), :mins)
