@@ -26,6 +26,19 @@ defmodule OpenAperture.Builder.Dispatcher do
   @connection_options nil
   use OpenAperture.Messaging  
 
+  @event_data %{
+                component:   :builder,
+                exchange_id: Configuration.get_current_exchange_id,
+                hostname:    System.get_env("HOSTNAME")
+              }
+
+  @event      %{
+                unique:   true,
+                type:     :unhandled_exception,
+                severity: :error,
+                data:     @event_data,
+                message:  nil
+              }
   @doc """
   Specific start_link implementation (required by the supervisor)
 
@@ -89,34 +102,14 @@ defmodule OpenAperture.Builder.Dispatcher do
           error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Exited with code #{inspect code}.  Payload:  #{inspect payload}" 
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Exited with code #{inspect code}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)              
           acknowledge(delivery_tag)
         :throw, value -> 
           error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Throw called with #{inspect value}.  Payload:  #{inspect payload}"
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Throw called with #{inspect value}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)  
           acknowledge(delivery_tag)
         what, value   -> 
@@ -124,17 +117,7 @@ defmodule OpenAperture.Builder.Dispatcher do
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
           Logger.error("Error stack trace: #{Exception.format_stacktrace}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)            
           acknowledge(delivery_tag)
       end      
@@ -260,11 +243,7 @@ defmodule OpenAperture.Builder.Dispatcher do
   def execute_milestone(:completed, {:ok, request}) do
     Logger.debug("Executing :completed milestone for request #{request.delivery_tag} (workflow #{request.workflow.id})")
 
-    #gather all of the required info from the BuilderRequest
-    orchestrator_request = request.orchestrator_request
-    orchestrator_request = %{orchestrator_request | etcd_token: request.deployment_repo.etcd_token}
-    orchestrator_request = %{orchestrator_request | deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
-
+    orchestrator_request = make_orchestrator_request(request)
     Workflow.step_completed(orchestrator_request)
   end  
 
@@ -298,5 +277,15 @@ defmodule OpenAperture.Builder.Dispatcher do
     unless message == nil do
       SubscriptionHandler.reject(message[:subscription_handler], message[:delivery_tag], redeliver)
     end
+  end
+
+  defp make_event(error_msg), do: %{@event | message: error_msg}
+
+  #gather all of the required info from the BuilderRequest
+  defp make_orchestrator_request(request) do
+    orchestrator_request = request.orchestrator_request
+    orchestrator_request = %{orchestrator_request | etcd_token:       request.deployment_repo.etcd_token}
+    orchestrator_request = %{orchestrator_request | deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
+    orchestrator_request
   end
 end
