@@ -32,6 +32,12 @@ defmodule OpenAperture.Builder.Dispatcher do
                 hostname:    System.get_env("HOSTNAME")
               }
 
+  @event      %{
+                unique:   true,
+                type:     :unhandled_exception,
+                severity: :error,
+                data:     @event_data,
+              }
   @doc """
   Specific start_link implementation (required by the supervisor)
 
@@ -277,12 +283,6 @@ defmodule OpenAperture.Builder.Dispatcher do
   end
 
   defp make_event(error_msg) do
-    %{
-      unique:   true,
-      type:     :unhandled_exception,
-      severity: :error,
-      data:     @event_data,
-      message:  error_msg
-    }
+    Dict.merge(@event, %{ message: error_msg})
   end
 end
