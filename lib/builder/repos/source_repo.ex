@@ -36,7 +36,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   @doc """
   Method to download the repository locally
   """
-  @spec download!(SourceRepo, String.t, String.t) :: SourceRepo
+  @spec download!(t, String.t, String.t) :: t
   def download!(repo, source_repo_url, source_repo_git_ref) do
     case download(repo, source_repo_url, source_repo_git_ref) do
       {:ok, repo}      -> repo
@@ -44,7 +44,7 @@ defmodule OpenAperture.Builder.SourceRepo do
     end
   end
 
-  @spec download(SourceRepo, String.t, String.t) :: {:ok, GitRepo} | {:error, String.t()}
+  @spec download(t, String.t, String.t) :: {:ok, GitRepo} | {:error, String.t()}
   defp download(repo, source_repo_url, source_repo_git_ref) do
     Logger.info "Downloading Source repo..."
     github_repo = %GitRepo{
@@ -110,7 +110,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   # 
   # Map
   #
-  @spec resolve_openaperture_info(SourceRepo) :: Map
+  @spec resolve_openaperture_info(t) :: Map
   defp resolve_openaperture_info(repo) do
     output_path = "#{repo.output_dir}/openaperture.json"
 
@@ -128,7 +128,7 @@ defmodule OpenAperture.Builder.SourceRepo do
     end
   end
 
-  @spec get_current_commit_hash!(SourceRepo) :: String.t
+  @spec get_current_commit_hash!(t) :: String.t
   def get_current_commit_hash!(source_repo) do
     case get_current_commit_hash(source_repo) do
       {:ok, hash}      -> hash
@@ -136,7 +136,7 @@ defmodule OpenAperture.Builder.SourceRepo do
     end
   end
 
-  @spec get_current_commit_hash(SourceRepo) :: {:ok, String.t} | {:error, String.t}
+  @spec get_current_commit_hash(t) :: {:ok, String.t} | {:error, String.t}
   def get_current_commit_hash(source_repo) do
     Git.get_current_commit_hash(source_repo.github_source_repo)
   end
