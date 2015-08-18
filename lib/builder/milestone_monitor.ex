@@ -6,6 +6,9 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
 
   @logprefix "[MilestoneMonitor]"
 
+  defp too_long?(:build, time), do: time >= 25 #max_build_duration_warn_time
+  defp too_long?(:step,  time), do: time >= 15 #max_step_duration_warn_time
+
   @spec monitor(BuilderRequest.t, Atom, fun) :: BuilderRequest.t
   def monitor(builder_request, current_milestone, fun) do
     Logger.debug("#{@logprefix} Starting to monitor milestone #{inspect current_milestone} for workflow #{builder_request.workflow.id}")
@@ -50,7 +53,5 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
         Logger.debug("#{@logprefix} Finished monitoring milestone #{inspect current_milestone} for workflow #{builder_request.workflow.id}")
         ret
     end
-    defp too_long?(:build, time), do: time >= 25 #max_build_duration_warn_time
-    defp too_long?(:step,  time), do: time >= 15 #max_step_duration_warn_time
   end
 end
