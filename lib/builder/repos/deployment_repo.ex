@@ -71,31 +71,29 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec download!(DeploymentRepo, Workflow.t) :: GitRepo.t
   def download!(repo, workflow) do
     case download(repo, workflow) do
-      {:ok, repo} -> repo
+      {:ok, repo}      -> repo
       {:error, reason} -> raise reason
     end
   end
 
   @spec download(DeploymentRepo, Workflow.t) :: {:ok, GitRepo} | {:error, String.t()}
   defp download(repo, workflow) do
-    if workflow.deployment_repo_git_ref == nil do
-      deployment_repo_git_ref = "master"
-    else
-      deployment_repo_git_ref = workflow.deployment_repo_git_ref
-    end
+    deployment_repo_git_ref = case workflow.deployment_repo_git_ref do
+                                nil -> "master"
+                                _   -> workflow.deployment_repo_git_ref
+                              end
  
     github_repo = %GitRepo{
       local_repo_path: repo.output_dir, 
-      remote_url: GitRepo.resolve_github_repo_url(workflow.deployment_repo), 
-      branch: deployment_repo_git_ref
+      remote_url:      GitRepo.resolve_github_repo_url(workflow.deployment_repo), 
+      branch:          deployment_repo_git_ref
     }
 
     case Git.clone(github_repo) do
-      :ok ->
-        case Git.checkout(github_repo) do
-          :ok -> {:ok, github_repo}
-          {:error, reason} -> {:error, reason}
-        end
+      :ok -> case Git.checkout(github_repo) do
+               :ok              -> {:ok, github_repo}
+               {:error, reason} -> {:error, reason}
+             end
       {:error, reason} -> {:error, reason}
     end
   end
@@ -106,7 +104,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec populate_source_repo!(DeploymentRepo, Workflow.t) :: SourceRepo
   def populate_source_repo!(repo, workflow) do
     case populate_source_repo(repo, workflow) do
-      {:ok, repo} -> repo
+      {:ok, repo}      -> repo
       {:error, reason} -> raise reason
     end
   end
@@ -115,11 +113,10 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   defp populate_source_repo(repo, workflow) do
     case resolve_source_info(repo) do
       {:ok, source_info} ->
-        source_repo = if workflow.source_repo != nil && String.length(workflow.source_repo) > 0 do
-          workflow.source_repo
-        else
-          source_info["source_repo"]
-        end
+        source_repo = case source_repo_useable?(workflow) do
+                        true -> workflow.source_repo
+                        _    -> source_info["source_repo"]
+                      end
 
         #if source_commit_hash was passed in, override what's in the source.json (if present)
         source_repo_git_ref_option = cond do
@@ -129,7 +126,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
         end
 
         cond do
-          source_repo == nil || String.length(source_repo) == 0 ->
+          source_repo_undef?(source_repo) ->
             Logger.debug("No source repository has been defined")
             {:ok, nil}            
           true -> {:ok, SourceRepo.create!(workflow.id, source_repo, source_repo_git_ref_option)}
@@ -145,12 +142,20 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     if File.exists?(output_path) do
       Logger.info("Resolving source info from #{output_path}...")
       case output_path |> File.read! |> Poison.decode do
-        {:ok, json} -> {:ok, json}
+        {:ok, json}      -> {:ok, json}
         {:error, reason} -> {:error, "An error occurred parsing source.json JSON! #{inspect reason}"}
       end
     else
       {:ok, %{}}
     end
+  end
+
+  defp source_repo_undef?(source_repo) do
+    source_repo == nil || String.length(source_repo) == 0
+  end
+
+  defp source_repo_useable?(workflow) do
+    workflow.source_repo != nil && String.length(workflow.source_repo) > 0
   end
 
   @doc """
@@ -159,7 +164,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec populate_etcd_token!(DeploymentRepo) :: String.t
   def populate_etcd_token!(repo) do
     case populate_etcd_token(repo) do
-      {:ok, token} -> token
+      {:ok, token}     -> token
       {:error, reason} -> raise reason
     end
   end
@@ -167,14 +172,14 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec populate_etcd_token(DeploymentRepo) :: {:ok, String.t()} | {:error, term}
   defp populate_etcd_token(repo) do
     output_dir = repo.output_dir
-    etcd_json = "#{output_dir}/etcd.json"
+    etcd_json  = "#{output_dir}/etcd.json"
     if File.exists?(etcd_json) do
       Logger.info("Retrieving the etcd token...")
       case Poison.decode(File.read!(etcd_json)) do
         {:ok, json} -> case json["token"] do
                           nil -> {:error, "token missing from etcd.json"}
-                          "" -> {:error, "invalid token in etcd.json"}
-                          _ -> {:ok, json["token"]}
+                          ""  -> {:error, "invalid token in etcd.json"}
+                          _   -> {:ok, json["token"]}
                        end
         {:error, reason} -> {:error, "An error occurred parsing etcd JSON!  #{inspect reason}"}
       end
@@ -189,7 +194,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec get_fleet_config!(DeploymentRepo) :: String.t
   def get_fleet_config!(repo) do
     case get_fleet_config(repo) do
-      {:ok, config} -> config
+      {:ok, config}    -> config
       {:error, reason} -> raise reason
     end
   end
@@ -201,7 +206,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     if File.exists?(etcd_json) do
       Logger.info("Loading custom Fleet configuration...")
       case Poison.decode(File.read!(etcd_json)) do
-        {:ok, json} -> {:ok, json}
+        {:ok, json}      -> {:ok, json}
         {:error, reason} -> {:error, "An error occurred parsing Fleet JSON!  #{inspect reason}"}
       end
     else
@@ -217,7 +222,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   def populate_docker_repo_name!(repo) do
     case populate_docker_repo_name(repo) do
       {:ok, docker_repo_name} -> docker_repo_name
-      {:error, reason} -> raise reason
+      {:error, reason}        -> raise reason
     end
   end
 
@@ -244,7 +249,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   def populate_docker_repo!(repo) do
     case populate_docker_repo(repo) do
       {:ok, docker_repo} -> docker_repo
-      {:error, reason} -> raise reason
+      {:error, reason}   -> raise reason
     end
   end
 
@@ -255,12 +260,12 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       {:error, "Failed to resolve docker host for etcd cluster #{repo.docker_build_etcd_token}:  #{inspect docker_host_val}"}
     else
       dockerhub_repo = %Docker{
-        output_dir: repo.output_dir, 
-        docker_repo_url: repo.docker_repo_name,
-        docker_host: "tcp://#{docker_host_val}:2375",
-        registry_url: Application.get_env(:openaperture_builder, :docker_registry_url),
+        output_dir:        repo.output_dir, 
+        docker_repo_url:   repo.docker_repo_name,
+        docker_host:       "tcp://#{docker_host_val}:2375",
+        registry_url:      Application.get_env(:openaperture_builder, :docker_registry_url),
         registry_username: Application.get_env(:openaperture_builder, :docker_registry_username),
-        registry_email: Application.get_env(:openaperture_builder, :docker_registry_email),
+        registry_email:    Application.get_env(:openaperture_builder, :docker_registry_email),
         registry_password: Application.get_env(:openaperture_builder, :docker_registry_password)
       }
 
@@ -269,14 +274,14 @@ defmodule OpenAperture.Builder.DeploymentRepo do
           {:ok, json} -> 
             case json["docker_registry_url"] do
               nil -> dockerhub_repo
-              _   -> 
+              _   ->
                 %Docker{
-                  output_dir: repo.output_dir, 
-                  docker_repo_url: repo.docker_repo_name,
-                  docker_host: repo.docker_build_etcd_token,
-                  registry_url: json["docker_registry_url"],
+                  output_dir:        repo.output_dir, 
+                  docker_repo_url:   repo.docker_repo_name,
+                  docker_host:       repo.docker_build_etcd_token,
+                  registry_url:      json["docker_registry_url"],
                   registry_username: json["docker_registry_username"],
-                  registry_email: json["docker_registry_email"],
+                  registry_email:    json["docker_registry_email"],
                   registry_password: json["docker_registry_password"]
                 }              
             end
@@ -373,7 +378,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   defp resolve_service_file([filename|remaining_files], github_deployment_repo, source_dir, replacements, units_commit_required) do
     if String.ends_with?(filename, ".service.eex") do
       template_path = "#{source_dir}/#{filename}"
-      output_path = "#{source_dir}/#{String.slice(filename, 0..-5)}"
+      output_path   = "#{source_dir}/#{String.slice(filename, 0..-5)}"
 
       Logger.info("Resolving service file #{output_path} from template #{template_path}...")
       service_file = EEx.eval_file "#{source_dir}/#{filename}", replacements
@@ -406,7 +411,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   @spec checkin_pending_changes(DeploymentRepo, String.t()) :: :ok | {:error, String.t()}
   def checkin_pending_changes(repo, message) do
     case Git.commit(repo.github_deployment_repo, message) do
-      :ok -> Git.push(repo.github_deployment_repo)
+      :ok              -> Git.push(repo.github_deployment_repo)
       {:error, reason} -> {:error, reason}
     end
   end
@@ -418,8 +423,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   def get_units(repo) do
     Logger.debug("Retrieving Units for repo #{repo.output_dir}...")
     case File.ls("#{repo.output_dir}") do
-      {:ok, files} ->
-        get_unit(files, repo.output_dir, [])
+      {:ok, files}     -> get_unit(files, repo.output_dir, [])
       {:error, reason} ->
         Logger.error("there are no service files in #{repo.output_dir}:  #{reason}!")
         []
@@ -496,12 +500,12 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     Docker.login(repo.docker_repo)
     image_found = false
     if repo.force_build == true do
-      requires_build = true
+      requires_build  = true
       status_messages = status_messages ++ ["The force_build flag has been set, requesting docker build"]
     else
       requires_build = case Docker.pull(repo.docker_repo, tag) do
         :ok -> 
-          image_found = true
+          image_found     = true
           status_messages = status_messages ++ ["The docker image #{tag} already exists, skipping docker build"]
           false
         {:error, _error_msg} -> 
@@ -515,7 +519,7 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       case Docker.build(repo.docker_repo, interrupt_handler) do
         {:ok, image_id} ->
           try do
-            if (image_id != nil && String.length(image_id) > 0) do
+            if image_success?(image_id) do
               status_messages = status_messages ++ ["Successfully created image #{image_id}, tagging image #{image_id}..."]
               case Docker.tag(repo.docker_repo, image_id, [tag]) do
                 {:ok, _} ->
@@ -543,4 +547,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
       {:ok, status_messages, image_found}
     end
   end
+
+  defp image_success?(image_id), do: (image_id != nil && String.length(image_id) > 0)
 end
