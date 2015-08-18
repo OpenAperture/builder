@@ -39,7 +39,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   @spec download!(SourceRepo, String.t, String.t) :: SourceRepo
   def download!(repo, source_repo_url, source_repo_git_ref) do
     case download(repo, source_repo_url, source_repo_git_ref) do
-      {:ok, repo} -> repo
+      {:ok, repo}      -> repo
       {:error, reason} -> raise reason
     end
   end
@@ -49,14 +49,14 @@ defmodule OpenAperture.Builder.SourceRepo do
     Logger.info "Downloading Source repo..."
     github_repo = %GitRepo{
       local_repo_path: repo.output_dir, 
-      remote_url: GitRepo.resolve_github_repo_url(source_repo_url), 
-      branch: source_repo_git_ref
+      remote_url:      GitRepo.resolve_github_repo_url(source_repo_url),
+      branch:          source_repo_git_ref
     }
 
     case Git.clone(github_repo) do
       :ok ->
         case Git.checkout(github_repo) do
-          :ok -> {:ok, github_repo}
+          :ok              -> {:ok, github_repo}
           {:error, reason} -> {:error, reason}
         end
       {:error, reason} -> {:error, reason}
@@ -73,7 +73,10 @@ defmodule OpenAperture.Builder.SourceRepo do
   """
   @spec cleanup(pid) :: term
   def cleanup(repo) do
-    if (repo.output_dir != nil && String.length(repo.output_dir) > 0), do: File.rm_rf(repo.output_dir)
+    if output_dir_content?(repo), do: File.rm_rf(repo.output_dir)
+  end
+  defp output_dir_content?(repo) do
+    (repo.output_dir != nil && String.length(repo.output_dir) > 0)
   end
 
   @doc """
@@ -112,7 +115,7 @@ defmodule OpenAperture.Builder.SourceRepo do
     if File.exists?(output_path) do
       Logger.info("Resolving OpenAperture info from #{output_path}...")
       openaperture_json = case File.read!(output_path) |> Poison.decode do
-        {:ok, json} -> json
+        {:ok, json}      -> json
         {:error, reason} ->  
           Logger.error("An error occurred parsing OpenAperture JSON! #{inspect reason}")
           nil
@@ -126,7 +129,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   @spec get_current_commit_hash!(SourceRepo) :: String.t
   def get_current_commit_hash!(source_repo) do
     case get_current_commit_hash(source_repo) do
-      {:ok, hash} -> hash
+      {:ok, hash}      -> hash
       {:error, reason} -> raise reason
     end
   end
