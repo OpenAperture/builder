@@ -35,13 +35,13 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
           end
           |> Time.diff(Time.now(), :mins)
         workflow_duration = Time.diff(builder_request.workflow.workflow_start_time, Time.now(), :mins)
-        if time_since_last_build_duration_warning >= @max_build_duration_warn_time do
+        if too_long?(time_since_last_build_duration_warning) do
           Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone has been processing for #{time_since_last_build_duration_warning} minutes")
           orchestrator_request = OrchestratorWorkflow.publish_failure_notification(builder_request.orchestrator_request, "Warning: Builder request running for #{workflow_duration} minutes (current milestone: #{current_milestone})")
           builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow, last_total_duration_warning: Time.now()}
         end
         time_since_last_step_duration_warning = Time.diff(last_alert, Time.now(), :mins)
-        if time_since_last_step_duration_warning >= @max_step_duration_warn_time do
+        if too_long?(time_since_last_step_duration_warning) do
           Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone has been processing for #{time_since_last_build_duration_warning} minutes")
           orchestrator_request = OrchestratorWorkflow.publish_failure_notification(builder_request.orchestrator_request, "Warning: Builder request #{current_milestone} milestone running for #{ time_since_last_step_duration_warning} minutes. Total workflow duration: #{workflow_duration} minutes.")
           builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow}
@@ -54,4 +54,7 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
         ret
     end
   end
+
+  defp too_long?(:build, time), do: time >= @max_build_duration_warn_time
+  defp too_long?(:step,  time), do: time >= @max_step_duration_warn_time
 end
