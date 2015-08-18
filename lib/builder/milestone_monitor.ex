@@ -53,6 +53,6 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
     end
   end
 
-  @spec too_long?(atom, Time.t) :: boolean
+  @spec too_long?(atom, Date.time) :: boolean
   defp too_long?(type, time), do: time >= @max_duration_warn_time[type]
 end
