@@ -2,7 +2,7 @@ require Logger
 
 defmodule OpenAperture.Builder.DeploymentRepo do
 
-  alias OpenAperture.WorkflowOrchestratorApi.Workflow
+  alias OpenAperture.WorkflowOrchestratorApi.Workflow, as: Workflow
   alias OpenAperture.WorkflowOrchestratorApi.Request
   alias OpenAperture.Builder.Docker
   alias OpenAperture.Builder.DockerHosts
@@ -150,10 +150,12 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
+  @spec source_repo_undef?(Workflow.t) :: boolean
   defp source_repo_undef?(source_repo) do
     source_repo == nil || String.length(source_repo) == 0
   end
 
+  @spec source_repo_useable?(Workflow.t) :: boolean
   defp source_repo_useable?(workflow) do
     workflow.source_repo != nil && String.length(workflow.source_repo) > 0
   end
@@ -548,5 +550,6 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     end
   end
 
+  @spec image_success?(integer) :: boolean
   defp image_success?(image_id), do: (image_id != nil && String.length(image_id) > 0)
 end
