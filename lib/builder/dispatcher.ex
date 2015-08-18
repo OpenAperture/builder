@@ -89,34 +89,14 @@ defmodule OpenAperture.Builder.Dispatcher do
           error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Exited with code #{inspect code}.  Payload:  #{inspect payload}" 
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Exited with code #{inspect code}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)              
           acknowledge(delivery_tag)
         :throw, value -> 
           error_msg = "Message #{delivery_tag} (workflow #{payload[:id]}) Throw called with #{inspect value}.  Payload:  #{inspect payload}"
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Throw called with #{inspect value}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)  
           acknowledge(delivery_tag)
         what, value   -> 
@@ -124,17 +104,7 @@ defmodule OpenAperture.Builder.Dispatcher do
           Logger.error(error_msg)
           Workflow.step_failed(builder_request.orchestrator_request, "An unexpected error occurred executing build request", "Caught #{inspect what} with #{inspect value}")
           Logger.error("Error stack trace: #{Exception.format_stacktrace}")
-          event = %{
-            unique: true,
-            type: :unhandled_exception, 
-            severity: :error, 
-            data: %{
-              component: :builder,
-              exchange_id: Configuration.get_current_exchange_id,
-              hostname: System.get_env("HOSTNAME")
-            },
-            message: error_msg
-          }       
+          event = make_event(error_msg)
           SystemEvent.create_system_event!(ManagerApi.get_api, event)            
           acknowledge(delivery_tag)
       end      
@@ -298,5 +268,20 @@ defmodule OpenAperture.Builder.Dispatcher do
     unless message == nil do
       SubscriptionHandler.reject(message[:subscription_handler], message[:delivery_tag], redeliver)
     end
+  end
+
+  defp make_event(error_msg) do
+    data = %{
+        component:   :builder,
+        exchange_id: Configuration.get_current_exchange_id,
+        hostname:    System.get_env("HOSTNAME")
+      },
+    event = %{
+      unique:   true,
+      type:     :unhandled_exception,
+      severity: :error,
+      data:     data,
+      message:  error_msg
+    }
   end
 end
