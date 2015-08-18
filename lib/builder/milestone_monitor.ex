@@ -6,6 +6,8 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
 
   @logprefix "[MilestoneMonitor]"
 
+  @max_build_duration_warn_time = 25
+
   @spec monitor(BuilderRequest.t, Atom, fun) :: BuilderRequest.t
   def monitor(builder_request, current_milestone, fun) do
     Logger.debug("#{@logprefix} Starting to monitor milestone #{inspect current_milestone} for workflow #{builder_request.workflow.id}")
@@ -32,7 +34,7 @@ defmodule OpenAperture.Builder.MilestoneMonitor do
           end
           |> Time.diff(Time.now(), :mins)
         workflow_duration = Time.diff(builder_request.workflow.workflow_start_time, Time.now(), :mins)
-        if time_since_last_build_duration_warning >= 25 do
+        if time_since_last_build_duration_warning >= @max_build_duration_warn_time do
           Logger.debug("#{@logprefix}[#{builder_request.workflow.id}][#{inspect current_milestone}] Milestone has been processing for #{time_since_last_build_duration_warning} minutes")
           orchestrator_request = OrchestratorWorkflow.publish_failure_notification(builder_request.orchestrator_request, "Warning: Builder request running for #{workflow_duration} minutes (current milestone: #{current_milestone})")
           builder_request = %{builder_request | orchestrator_request: orchestrator_request, workflow: orchestrator_request.workflow, last_total_duration_warning: Time.now()}
