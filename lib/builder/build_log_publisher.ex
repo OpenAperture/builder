@@ -51,10 +51,9 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
   def get_exchanges() do
     managers = ManagerApi.SystemComponent.list!(ManagerApi.get_api, %{type: "manager"})
     Enum.reduce(managers, [], fn manager, list ->
-                                if has_item(list, manager["messaging_exchange_id"]) do
-                                  list
-                                else
-                                  [manager["messaging_exchange_id"] | list]
+                                case has_item(list, manager["messaging_exchange_id"]) do
+                                  true -> list
+                                  _    -> [manager["messaging_exchange_id"] | list]
                                 end
                               end)
   end
@@ -65,11 +64,11 @@ defmodule OpenAperture.Builder.BuildLogPublisher do
   def add_new_exchange_publishers(exchanges, current_exchange_publishers) do
     Enum.reduce(exchanges, current_exchange_publishers,
                              fn exchange_id = key, exchange_publishers ->
-                              if Dict.has_key?(exchange_publishers, key) do
-                                exchange_publishers
-                              else
-                                {:ok, pid} = ExchangePublisher.start_link(exchange_id)
-                                Dict.put(exchange_publishers, key, pid)
+                              case Dict.has_key?(exchange_publishers, key) do
+                                true -> exchange_publishers
+                                _    ->
+                                  {:ok, pid} = ExchangePublisher.start_link(exchange_id)
+                                  Dict.put(exchange_publishers, key, pid)
                               end
                              end)
   end
