@@ -40,18 +40,18 @@ defmodule OpenAperture.Builder.Mixfile do
       {:ex_doc, "0.7.3", only: :test},
       {:earmark, "0.1.17", only: :test}, 
       {:poison, "~> 1.4.0", override: true},
-      {:openaperture_messaging, git: "https://github.com/OpenAperture/messaging.git", ref: "525e68bdcec83a30d914813a58302cea02648b06", override: true},
-      {:openaperture_manager_api, git: "https://github.com/OpenAperture/manager_api.git", ref: "ab5334f276b308706a91e85ca27ba937bb02fb9f", override: true},
+      {:openaperture_messaging, git: "https://github.com/OpenAperture/messaging.git", ref: "3d3a84eabf4ba0a3a827a61c4d99cdbf0ab49a0d", override: true},
+      {:openaperture_manager_api, git: "https://github.com/OpenAperture/manager_api.git", ref: "86cf2c324434f9899416881219e03c0f959c2896", override: true},
       {:openaperture_overseer_api, git: "https://github.com/OpenAperture/overseer_api.git", ref: "4b9146507ab50789fec4696b96f79642add2b502", override: true},
-      {:openaperture_fleet, git: "https://github.com/OpenAperture/fleet.git", ref: "714c52b5258f96e741b57c73577431caa6f480b3", override: true},
-      {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "c66fa165e9ee07250d264b4b63ce375692e2b7cc", override: true},
+      {:openaperture_fleet, git: "https://github.com/OpenAperture/fleet.git", ref: "324acdae0ceecb6a954d804d56d9d2fceaeb937c", override: true},
+      {:openaperture_workflow_orchestrator_api, git: "https://github.com/OpenAperture/workflow_orchestrator_api.git", ref: "df4033a048145c62361e7e161c60142b7fc501e4", override: true},
       {:tail, "~> 1.0.0"},
-      {:timex, "~> 0.12.9"},
-      {:fleet_api, "~> 0.0.14", override: true},
+      {:timex, "~> 0.13.3", override: true},
+      {:fleet_api, "~> 0.0.15", override: true},
       {:porcelain, "~>2.0.0"},
       {:uuid, "~> 0.1.5" },
 
-      {:meck, "0.8.2", only: :test},
+      {:meck, "0.8.3", override: true},
      ]
   end
 end
