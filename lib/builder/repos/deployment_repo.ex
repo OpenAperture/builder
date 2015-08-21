@@ -129,7 +129,11 @@ defmodule OpenAperture.Builder.DeploymentRepo do
           source_repo_undef?(source_repo) ->
             Logger.debug("No source repository has been defined")
             {:ok, nil}            
-          true -> {:ok, SourceRepo.create!(workflow.id, source_repo, source_repo_git_ref_option)}
+          true -> 
+            case SourceRepo.create!(workflow.id, source_repo, source_repo_git_ref_option) do
+              {:error, reason} -> {:error, reason}
+              repo -> {:ok, repo}
+            end
         end
       {:error, reason} -> {:error, reason}
     end

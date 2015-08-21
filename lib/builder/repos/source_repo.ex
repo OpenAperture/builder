@@ -19,7 +19,7 @@ defmodule OpenAperture.Builder.SourceRepo do
   @doc """
   Method to create a populated SourceRepo
   """
-  @spec create!(String.t, String.t, String.t) :: {:ok, SourceRepo} | {:error, term}
+  @spec create!(String.t, String.t, String.t) :: SourceRepo | {:error, term}
   def create!(workflow_id, source_repo_url, source_repo_git_ref) do
     output_dir = "#{Application.get_env(:openaperture_builder, :tmp_dir)}/source_repos/#{workflow_id}"
     try do
