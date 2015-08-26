@@ -4,6 +4,10 @@
  
 The Builder module provides a standardized mechanism to execute build configurations and docker builds for Workflows that are orchestrated through the OpenAperture system.
 
+## Contributing
+
+To contribute to OpenAperture development, view our [contributing guide](http://openaperture.io/dev_resources/contributing.html)
+
 ## Module Responsibilities
 
 The WorkflowOrchestrator module is responsible for the following actions within OpenAperture:
