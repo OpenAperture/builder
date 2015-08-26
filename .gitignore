@@ -4,3 +4,4 @@ erl_crash.dump
 *.ez
 builder.sublime-workspace
 .DS_Store
+doc/
