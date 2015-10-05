@@ -222,6 +222,33 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   end
 
   @doc """
+  Method to load any custom AWS configuration
+  """
+  @spec get_aws_config!(DeploymentRepo) :: String.t
+  def get_aws_config!(repo) do
+    case get_aws_config(repo) do
+      {:ok, config}    -> config
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @spec get_aws_config(DeploymentRepo) :: {:ok, String.t()} | {:error, term}
+  defp get_aws_config(repo) do
+    output_dir = repo.output_dir
+    etcd_json = "#{output_dir}/aws.json"
+    if File.exists?(etcd_json) do
+      Logger.info("Loading custom AWS configuration...")
+      case Poison.decode(File.read!(etcd_json)) do
+        {:ok, json}      -> {:ok, json}
+        {:error, reason} -> {:error, "An error occurred parsing AWS JSON!  #{inspect reason}"}
+      end
+    else
+      Logger.info("There is no custom AWS configuration defined")
+      {:ok, nil}
+    end
+  end
+
+  @doc """
   Method to retrieve the associated Docker repository name
   """
   @spec populate_docker_repo_name!(DeploymentRepo) :: String.t

@@ -14,7 +14,7 @@ defmodule OpenAperture.Builder.Request do
             stdout_build_log_tail_pid: nil,
             stderr_build_log_tail_pid: nil,
             last_total_duration_warning: nil
-
+            
   @type t :: %__MODULE__{orchestrator_request: OpenAperture.WorkflowOrchestratorApi.Request.t,
                          workflow: OpenAperture.WorkflowOrchestratorApi.Workflow.t}
 
@@ -74,6 +74,25 @@ defmodule OpenAperture.Builder.Request do
   @spec set_fleet_config(OpenAperture.Builder.Request.t, Map) :: OpenAperture.Builder.Request.t
   def set_fleet_config(builder_request, config) do
     orchestrator_request = %{builder_request.orchestrator_request | fleet_config: config}
+    %{builder_request | orchestrator_request: orchestrator_request}
+  end
+
+  @doc """
+  Convenience wrapper to add Fleet configuration to the request
+
+  ## Options
+   
+  The `builder_request` option defines the Request
+
+  The `config` option represents the Notifications configuration options
+
+  ## Return values
+
+  Request
+  """
+  @spec set_aws_config(OpenAperture.Builder.Request.t, Map) :: OpenAperture.Builder.Request.t
+  def set_aws_config(builder_request, config) do
+    orchestrator_request = %{builder_request.orchestrator_request | aws_config: config}
     %{builder_request | orchestrator_request: orchestrator_request}
   end
 

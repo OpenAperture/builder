@@ -1039,4 +1039,39 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   after
     :meck.unload(File)
   end   
+
+  #========================
+  # get_aws_config tests
+
+  test "get_aws_config(repo) file does not exist" do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> false end)
+    
+    assert DeploymentRepo.get_aws_config!(%DeploymentRepo{}) == nil
+  after
+    :meck.unload(File)
+  end
+
+  test "get_aws_config(repo) bad json" do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn _ -> "this is not json" end)
+
+    assert_raise RuntimeError,
+                 "An error occurred parsing AWS JSON!  {:invalid, \"t\"}",
+                 fn -> %DeploymentRepo{} |> DeploymentRepo.get_aws_config! end
+  after
+    :meck.unload(File)
+  end
+
+  test "get_aws_config(repo) success" do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn _ -> Poison.encode!(%{instance_cnt: 10}) end)
+
+    config = DeploymentRepo.get_aws_config!(%DeploymentRepo{})
+    assert config["instance_cnt"] == 10
+  after
+    :meck.unload(File)
+  end 
 end
