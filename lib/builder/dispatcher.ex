@@ -286,7 +286,8 @@ defmodule OpenAperture.Builder.Dispatcher do
   #gather all of the required info from the BuilderRequest
   @spec make_orchestrator_request(BuilderRequest.t) :: OrchestratorRequest.t
   defp make_orchestrator_request(request) do
-    %{request.orchestrator_request | etcd_token:       request.deployment_repo.etcd_token,
-                                     deployable_units: DeploymentRepo.get_units(request.deployment_repo)}
+    %{request.orchestrator_request |  etcd_token:       request.deployment_repo.etcd_token,
+                                      deployable_units: DeploymentRepo.get_units(request.deployment_repo),
+                                      ecs_task_definition: DeploymentRepo.get_ecs_task_definition(request.deployment_repo)}
   end
 end

@@ -378,6 +378,14 @@ defmodule OpenAperture.Builder.DeploymentRepo do
   end
 
   @doc """
+  Method to run the templating engine against the optional templated ecs_task_definition.json.eex. Returns true if any changes are made.
+  """
+  @spec resolve_ecs_file_template(DeploymentRepo, List) :: term
+  def resolve_ecs_file_template(repo, template_options) do
+    update_file(repo.output_dir <> "/ecs_task_definition.json.eex", repo.output_dir <> "/ecs_task_definition.json", template_options, repo.github_deployment_repo, :ecs_task_definition)
+  end
+  
+  @doc """
   Method to run the templating engine against any service files in the repo. Returns true if any changes are made.
   """
   @spec resolve_service_file_templates(DeploymentRepo, List) :: term
@@ -446,6 +454,20 @@ defmodule OpenAperture.Builder.DeploymentRepo do
     case Git.commit(repo.github_deployment_repo, message) do
       :ok              -> Git.push(repo.github_deployment_repo)
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Method to retrieve the ECS task definitino (if present)
+  """
+  @spec get_ecs_task_definition(DeploymentRepo) :: String.t
+  def get_ecs_task_definition(repo) do
+    output_path = "#{repo.output_dir}/ecs_task_definition.json"
+
+    if File.exists?(output_path) do
+      File.read!(output_path)    
+    else 
+      nil
     end
   end
 

@@ -104,6 +104,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
+    :meck.expect(DeploymentRepo, :get_ecs_task_definition, fn _ -> nil end)
 
     request = %BuilderRequest{
     	orchestrator_request: %Request{},
@@ -148,6 +149,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
+    :meck.expect(DeploymentRepo, :get_ecs_task_definition, fn _ -> nil end)
 
     Dispatcher.execute_milestone(:build, {:ok, request})
   after
@@ -212,6 +214,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
+    :meck.expect(DeploymentRepo, :get_ecs_task_definition, fn _ -> nil end)
 
     Dispatcher.execute_milestone(:config, {:ok, request})
   after
@@ -300,6 +303,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
+    :meck.expect(DeploymentRepo, :get_ecs_task_definition, fn _ -> nil end)
     :meck.expect(DeploymentRepo, :init_from_request, fn _ -> {:ok, %DeploymentRepo{source_repo: %SourceRepo{}}} end)
     :meck.expect(DeploymentRepo, :cleanup, fn _ -> :ok end)
 
@@ -337,6 +341,7 @@ defmodule OpenAperture.Builder.DispatcherTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :get_units, fn _ -> [] end)
+    :meck.expect(DeploymentRepo, :get_ecs_task_definition, fn _ -> nil end)
     :meck.expect(DeploymentRepo, :init_from_request, fn _ -> {:error, "bad news bears"} end)
 
     :meck.new(MessageManager, [:passthrough])

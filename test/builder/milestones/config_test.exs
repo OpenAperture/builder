@@ -20,7 +20,8 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> true end)
-    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)    
+    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)  
+    :meck.expect(DeploymentRepo, :resolve_ecs_file_template, fn _,_ -> true end)    
     :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> :ok end)
 
     :meck.new(Workflow, [:passthrough])
@@ -48,7 +49,8 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> false end)
-    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> false end)    
+    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> false end) 
+    :meck.expect(DeploymentRepo, :resolve_ecs_file_template, fn _,_ -> false end)   
 
     :meck.new(Workflow, [:passthrough])
     :meck.expect(Workflow, :publish_success_notification, fn _,_ -> request end)
@@ -76,6 +78,7 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> true end)
     :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)
+    :meck.expect(DeploymentRepo, :resolve_ecs_file_template, fn _,_ -> true end)
     :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> {:error, "bad news bears"} end)
 
     :meck.new(Workflow, [:passthrough])
@@ -104,7 +107,8 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> true end)
-    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)    
+    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end) 
+    :meck.expect(DeploymentRepo, :resolve_ecs_file_template, fn _,_ -> true end)   
     :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> :ok end)
 
     :meck.new(Workflow, [:passthrough])
@@ -145,7 +149,8 @@ defmodule OpenAperture.Builder.Milestones.ConfigTest do
 
     :meck.new(DeploymentRepo, [:passthrough])
     :meck.expect(DeploymentRepo, :resolve_dockerfile_template, fn _,_ -> true end)
-    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)    
+    :meck.expect(DeploymentRepo, :resolve_service_file_templates, fn _,_ -> true end)
+    :meck.expect(DeploymentRepo, :resolve_ecs_file_template, fn _,_ -> true end)    
     :meck.expect(DeploymentRepo, :checkin_pending_changes, fn _, _ -> :ok end)
 
     :meck.new(Workflow, [:passthrough])

@@ -781,6 +781,42 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   end  
 
   #========================
+  # resolve_ecs_file_template tests
+
+  test "resolve_ecs_file_template - no files", %{deploy_repo: deploy_repo} do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> false end)
+
+    assert DeploymentRepo.resolve_ecs_file_template(deploy_repo, []) == false
+  after
+    :meck.unload(File)
+  end
+
+  test "resolve_ecs_file_template - no template file", %{deploy_repo: deploy_repo} do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> false end)
+
+    assert DeploymentRepo.resolve_ecs_file_template(deploy_repo, []) == false
+  after
+    :meck.unload(File)
+  end
+
+  test "resolve_ecs_file_template - identical files", %{deploy_repo: deploy_repo} do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn _ -> "123abc" end)
+    :meck.expect(File, :write!, fn _,_ -> :ok end)
+
+    :meck.new(Git, [:passthrough])
+    :meck.expect(Git, :add, fn _,_ -> :ok end)
+
+    assert DeploymentRepo.resolve_ecs_file_template(deploy_repo, []) == false
+  after
+    :meck.unload(File)
+    :meck.unload(Git)
+  end  
+
+  #========================
   # checkin_pending_changes tests
 
   test "checkin_pending_changes - success", %{deploy_repo: deploy_repo} do
@@ -851,6 +887,28 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
   after
     :meck.unload(File)
     :meck.unload(ServiceFileParser)
+  end  
+
+  #========================
+  # get_ecs_task_definition tests
+
+  test "get_ecs_task_definition - does not exist", %{deploy_repo: deploy_repo} do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> false end)
+
+    assert DeploymentRepo.get_ecs_task_definition(deploy_repo) == nil
+  after
+    :meck.unload(File)
+  end
+
+  test "get_ecs_task_definition - exists", %{deploy_repo: deploy_repo} do
+    :meck.new(File, [:unstick])
+    :meck.expect(File, :exists?, fn _ -> true end)
+    :meck.expect(File, :read!, fn _ -> "something something" end)
+
+    assert DeploymentRepo.get_ecs_task_definition(deploy_repo) == "something something"
+  after
+    :meck.unload(File)
   end  
 
   #========================

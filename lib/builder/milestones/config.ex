@@ -81,8 +81,9 @@ defmodule OpenAperture.Builder.Milestones.Config do
   def do_resolve_files(builder_request) do
     dockerfile_commit_required = DeploymentRepo.resolve_dockerfile_template(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp])
     units_commit_required = DeploymentRepo.resolve_service_file_templates(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp, dst_port: "<%= dst_port %>"])
+    ecs_task_def_commit_required = DeploymentRepo.resolve_ecs_file_template(builder_request.deployment_repo, [commit_hash: builder_request.workflow.source_repo_git_ref, timestamp: get_timestamp])
 
-    if (dockerfile_commit_required || units_commit_required) do
+    if (dockerfile_commit_required || units_commit_required || ecs_task_def_commit_required) do
       case DeploymentRepo.checkin_pending_changes(builder_request.deployment_repo, "Deployment for commit #{builder_request.workflow.source_repo_git_ref}") do
         :ok -> {:ok, builder_request}
         {:error, reason} -> {:error, "Failed to commit changes:  #{inspect reason}", builder_request}
