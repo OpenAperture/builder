@@ -161,6 +161,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
+    workflow = %{workflow | milestones: ["deploy"]}
     request = %{request | workflow: workflow}
 
     {:error, message} = DeploymentRepo.init_from_request(request)
@@ -180,6 +181,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
+    workflow = %{workflow | milestones: ["deploy"]}
     request = %{request | workflow: workflow}
 
     :meck.new(File, [:unstick])
@@ -214,6 +216,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
     workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
+    workflow = %{workflow | milestones: ["deploy"]}
     request = %{request | workflow: workflow}
 
     :meck.new(File, [:unstick])
@@ -258,7 +261,8 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(GitRepo, :resolve_github_repo_url, fn _ -> "" end)
 
     workflow = %{request.workflow | source_repo_git_ref: "123abc"} 
-    workflow = %{workflow | deployment_repo: "myorg/myrepo"} 
+    workflow = %{workflow | deployment_repo: "myorg/myrepo"}
+    workflow = %{workflow | milestones: ["deploy"]}
     request = %{request | workflow: workflow}
     request = %{request | docker_build_etcd_token: "build_cluster"}
 
