@@ -46,7 +46,8 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
           repo = %{repo | github_deployment_repo: download!(repo, workflow)}
           repo = %{repo | source_repo: populate_source_repo!(repo, workflow)}
-          repo = %{repo | etcd_token: populate_etcd_token!(repo)}
+          #etcd not valid for deploy_ecs
+          if "deploy" in request.workflow.milestones, do: repo = %{repo | etcd_token: populate_etcd_token!(repo)}
           repo = %{repo | docker_repo_name: populate_docker_repo_name!(repo)}
           repo = %{repo | docker_repo: populate_docker_repo!(repo)}
           
