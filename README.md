@@ -1,7 +1,7 @@
 # OpenAperture.Builder
- 
+
 [![Build Status](https://semaphoreci.com/api/v1/projects/f7e72642-032f-437e-b89d-401014147e5c/399299/badge.svg)](https://semaphoreci.com/perceptive/openaperture_builder)
- 
+
 The Builder module provides a standardized mechanism to execute build configurations and docker builds for Workflows that are orchestrated through the OpenAperture system.
 
 ## Contributing
@@ -22,20 +22,20 @@ The following message(s) may be sent to the Builder.  A Workflow is a OpenApertu
 * Request config & build for a Workflow
 	* Queue:  builder
 	* Payload (Map)
-		* force_build 
+		* force_build
 		* db field:  workflow_id (same as id)
 		* db field:  id
 		* db field:  deployment_repo
 		* db field:  deployment_repo_git_ref
-		* db field:  source_repo 
+		* db field:  source_repo
 		* db field:  source_repo_git_ref
 		* db field:  milestones [:build, :deploy]
-		* db field:  current_step 
-		* db field:  elapsed_step_time 
+		* db field:  current_step
+		* db field:  elapsed_step_time
 		* db field:  elapsed_workflow_time
 		* db field:  workflow_duration
 		* db field:  workflow_step_durations
-		* db field:  workflow_error 
+		* db field:  workflow_error
 		* db field:  workflow_completed
 		* db field:  event_log
 		* notifications_exchange_id
@@ -83,22 +83,22 @@ The following configuration values must be defined either as environment variabl
 * Dockerhub Registry URL
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the URL for that registry, defaults to dockerhub.
-	* Environment Variable:  DOCKER_REGISTRY_URL	
+	* Environment Variable:  DOCKER_REGISTRY_URL
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_url
 * Docker Registry Username
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the username for that registry, defaults to dockerhub.
-	* Environment Variable:  DOCKER_REGISTRY_USERNAME	
+	* Environment Variable:  DOCKER_REGISTRY_USERNAME
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_username
 * Docker Registry Email
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the email for that registry, defaults to dockerhub.
-	* Environment Variable:  DOCKER_REGISTRY_EMAIL	
+	* Environment Variable:  DOCKER_REGISTRY_EMAIL
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_email
 * Docker Registry Password
 	* Type:  String
 	* Description:  By default, the Builder will push to a registry.  This is the password for that registry, defaults to dockerhub.
-	* Environment Variable:  DOCKER_REGISTRY_PASSWORD	
+	* Environment Variable:  DOCKER_REGISTRY_PASSWORD
   * Environment Configuration (.exs): :openaperture_builder, :docker_registry_password
 * Github OAuth Credentials
 	* Type:  String
@@ -122,11 +122,10 @@ To startup the application, use mix run:
 MIX_ENV=prod elixir --sname builder -S mix run --no-halt
 ```
 
-### Testing 
+### Testing
 
 You can then run the tests
 
 ```iex
 MIX_ENV=test mix test test/
 ```
- 
