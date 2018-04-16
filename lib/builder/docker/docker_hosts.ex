@@ -5,45 +5,31 @@ defmodule OpenAperture.Builder.DockerHosts do
   alias OpenAperture.Fleet.EtcdCluster
 
   @moduledoc """
-  This module provides methods to resolve a specific host IP from an etcd token
+  This module provides methods to resolve a specific host IP
   """
 
   @doc """
-  Method to retrieve the next available host for an Etcd Cluster
-
-  ## Options
-
-  The `etcd_token` option is the String etcd token
+  Method to retrieve the next available docker host
 
   ## Return Values
 
   {:ok, docker_host} | {:error, reason}
   """
-  @spec next_available(String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def next_available(etcd_token) do
-    if etcd_token == nil || String.length(etcd_token) == 0 do
-      {:error, "Unable to resolve host because the etcd_token is invalid!"}
+  @spec next_available() :: {:ok, String.t()} | {:error, String.t()}
+  def next_available() do
+    Logger.debug("[DockerHosts] Retrieving next available docker host...")
+
+    hosts = String.split(Application.get_env(:openaperture_builder, :build_slave_ips), ",")
+    if hosts == nil || length(hosts) == 0 do
+      {:error, "Unable to find a valid docker host - No hosts are available!"}
     else
-      Logger.debug("[DockerHosts] Retrieving next available docker host...")
-
-      hosts = EtcdCluster.get_hosts(etcd_token)
-      if hosts == nil || length(hosts) == 0 do
-        {:error, "Unable to find a valid docker host - No hosts are available!"}
+      cur_hosts_cnt = length(hosts)
+      if cur_hosts_cnt == 1 do
+        {:ok, List.first(hosts)}
       else
-        cur_hosts_cnt = length(hosts)
-        if cur_hosts_cnt == 1 do
-          host = List.first(hosts)
-        else
-          :random.seed(:os.timestamp)
-          host = List.first(Enum.shuffle(hosts))
-        end
-
-        if (host != nil && host.primaryIP != nil) do
-          {:ok, host.primaryIP}
-        else
-          {:error, "Host does not have a valid primaryIP:  #{inspect host}"}
-        end
-      end
+        :random.seed(:os.timestamp)
+        {:ok, List.first(Enum.shuffle(hosts))}
+      end        
     end
   end
 end

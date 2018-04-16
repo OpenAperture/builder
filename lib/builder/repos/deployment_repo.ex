@@ -289,9 +289,9 @@ defmodule OpenAperture.Builder.DeploymentRepo do
 
   @spec populate_docker_repo(DeploymentRepo) :: {:ok, String.t()} | {:error, String.t()}
   defp populate_docker_repo(repo) do
-    {result, docker_host_val} = DockerHosts.next_available(repo.docker_build_etcd_token)
+    {result, docker_host_val} = DockerHosts.next_available()
     if result == :error do
-      {:error, "Failed to resolve docker host for etcd cluster #{repo.docker_build_etcd_token}:  #{inspect docker_host_val}"}
+      {:error, "Failed to resolve docker host:  #{inspect docker_host_val}"}
     else
       dockerhub_repo = %Docker{
         output_dir:        repo.output_dir, 

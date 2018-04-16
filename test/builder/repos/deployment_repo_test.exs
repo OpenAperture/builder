@@ -76,7 +76,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
                                        end) 
 
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     payload = %{
       current_step: :build,
@@ -295,7 +295,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
                                        end)    
 
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     {:ok, repo} = DeploymentRepo.init_from_request(request)
     assert repo != nil
@@ -593,7 +593,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :exists?, fn _ -> false end)
 
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
@@ -617,7 +617,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     }) end)
 
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
@@ -639,7 +639,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     :meck.expect(File, :read!, fn _ -> "user/repo" end)
 
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)    
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)    
 
     repo = DeploymentRepo.populate_docker_repo!(deploy_repo)
     assert repo != nil
@@ -657,7 +657,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "populate_docker_repo! - valid file", %{deploy_repo: deploy_repo} do
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
@@ -684,7 +684,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "populate_docker_repo! - file missing data", %{deploy_repo: deploy_repo} do
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:ok, "123.456.789.0123"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:ok, "123.456.789.0123"} end)
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
@@ -703,7 +703,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
 
   test "populate_docker_repo! - docker host resolution fails", %{deploy_repo: deploy_repo} do
     :meck.new(DockerHosts, [:passthrough])
-    :meck.expect(DockerHosts, :next_available, fn _ -> {:error, "bad news bears"} end)
+    :meck.expect(DockerHosts, :next_available, fn -> {:error, "bad news bears"} end)
 
     :meck.new(File, [:unstick])
     :meck.expect(File, :exists?, fn _ -> true end)
@@ -712,7 +712,7 @@ defmodule OpenAperture.Builder.DeploymentRepo.Test do
     }) end)
 
     assert_raise RuntimeError,
-                 "Failed to resolve docker host for etcd cluster 123abc:  \"bad news bears\"",
+                 "Failed to resolve docker host:  \"bad news bears\"",
                  fn -> DeploymentRepo.populate_docker_repo!(deploy_repo) end
 
   after
