@@ -2,8 +2,6 @@ require Logger
 
 defmodule OpenAperture.Builder.DockerHosts do
 
-  alias OpenAperture.Fleet.EtcdCluster
-
   @moduledoc """
   This module provides methods to resolve a specific host IP
   """
